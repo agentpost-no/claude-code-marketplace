@@ -23,7 +23,7 @@ export async function register(
   publicKey: string
 ): Promise<RegisterResponse> {
   const body: RegisterRequest = { username, publicKey };
-  const res = await fetch(`${workerUrl}/register`, {
+  const res = await fetch(`${workerUrl}/api/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
