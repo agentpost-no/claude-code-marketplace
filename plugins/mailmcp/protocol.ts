@@ -69,6 +69,8 @@ export interface SendEmailRequest {
 	htmlBody?: string;
 	/** Optional custom headers (e.g., thread tracking) */
 	customHeaders?: Record<string, string>;
+	/** Footer language: "no" for Norwegian, "en" for English. Defaults to "en". */
+	footerLang?: "no" | "en";
 }
 
 export interface SendEmailResult {

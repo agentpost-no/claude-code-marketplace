@@ -96,7 +96,12 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
 					on_behalf_of: {
 						type: "string",
 						description:
-							"Name of the person this email is sent on behalf of (e.g. 'Ole Melhus'). Shows as 'Agentus on behalf of Ole Melhus' in the From field.",
+							"Name of the person this email is sent on behalf of. Shows as 'Agent on behalf of Name' in the From field.",
+					},
+					footer_language: {
+						type: "string",
+						enum: ["no", "en"],
+						description: "Language for the email footer. 'no' for Norwegian, 'en' for English. Defaults to 'en'.",
 					},
 				},
 				required: ["to", "subject", "body"],
@@ -134,12 +139,13 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 
 	switch (name) {
 		case "send_email": {
-			const { to, subject, body, html_body, on_behalf_of } = args as {
+			const { to, subject, body, html_body, on_behalf_of, footer_language } = args as {
 				to: string;
 				subject: string;
 				body: string;
 				html_body?: string;
 				on_behalf_of?: string;
+				footer_language?: "no" | "en";
 			};
 			const requestId = crypto.randomUUID();
 			const nonce = crypto.randomUUID();
@@ -169,6 +175,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				body,
 				htmlBody: html_body,
 				customHeaders,
+				footerLang: footer_language,
 			};
 
 			const result = await sendAndWait(sendMsg, requestId);
