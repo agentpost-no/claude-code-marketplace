@@ -20,9 +20,10 @@ export function getWorkerUrl(): string {
 export async function register(
   workerUrl: string,
   username: string,
-  publicKey: string
+  publicKey: string,
+  displayName?: string
 ): Promise<RegisterResponse> {
-  const body: RegisterRequest = { username, publicKey };
+  const body: RegisterRequest = { username, publicKey, displayName };
   const res = await fetch(`${workerUrl}/api/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

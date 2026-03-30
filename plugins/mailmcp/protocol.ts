@@ -97,6 +97,8 @@ export interface RegisterRequest {
   username: string;
   /** X25519 public key (base64) */
   publicKey: string;
+  /** Display name for outbound email (defaults to capitalized username) */
+  displayName?: string;
 }
 
 export interface RegisterResponse {

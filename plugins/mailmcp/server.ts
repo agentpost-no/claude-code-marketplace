@@ -64,7 +64,11 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           username: {
             type: "string",
-            description: "Desired username (lowercase alphanumeric, dots, hyphens). Becomes username@mail.mcp.run",
+            description: "Desired username (lowercase alphanumeric, dots, hyphens). Becomes username@mcp-server.fun",
+          },
+          display_name: {
+            type: "string",
+            description: "Display name shown in emails (e.g. 'Agentus'). Defaults to capitalized username.",
           },
         },
         required: ["username"],
@@ -102,7 +106,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: args } = req.params;
 
   if (name === "register_email") {
-    return handleRegisterEmail(args as { username: string });
+    return handleRegisterEmail(args as { username: string; display_name?: string });
   }
 
   if (!config) {
@@ -193,7 +197,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 });
 
 // --- Register email ---
-async function handleRegisterEmail(args: { username: string }) {
+async function handleRegisterEmail(args: { username: string; display_name?: string }) {
   if (config) {
     return toolOk(`Already registered as ${config.email}. To change, delete ~/.claude/channels/mailmcp/config.json and restart.`);
   }
@@ -206,7 +210,7 @@ async function handleRegisterEmail(args: { username: string }) {
   const workerUrl = getWorkerUrl();
 
   try {
-    const result = await register(workerUrl, username, publicKeyB64);
+    const result = await register(workerUrl, username, publicKeyB64, args.display_name);
 
     config = {
       workerUrl,
