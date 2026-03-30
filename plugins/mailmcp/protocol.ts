@@ -65,6 +65,8 @@ export interface SendEmailRequest {
   subject: string;
   /** Plain text body */
   body: string;
+  /** Optional HTML body (sent alongside text as multipart) */
+  htmlBody?: string;
   /** Optional custom headers (e.g., thread tracking) */
   customHeaders?: Record<string, string>;
 }

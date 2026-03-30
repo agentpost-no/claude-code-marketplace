@@ -83,6 +83,7 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
           to: { type: "string", description: "Recipient email address" },
           subject: { type: "string", description: "Email subject (UTF-8, supports æøå)" },
           body: { type: "string", description: "Plain text email body (UTF-8, supports æøå)" },
+          html_body: { type: "string", description: "HTML email body. When provided, sends as HTML with plain text body as fallback." },
           on_behalf_of: { type: "string", description: "Name of the person this email is sent on behalf of (e.g. 'Ole Melhus'). Shows as 'Agentus on behalf of Ole Melhus' in the From field." },
         },
         required: ["to", "subject", "body"],
@@ -120,8 +121,8 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 
   switch (name) {
     case "send_email": {
-      const { to, subject, body, on_behalf_of } = args as {
-        to: string; subject: string; body: string; on_behalf_of?: string;
+      const { to, subject, body, html_body, on_behalf_of } = args as {
+        to: string; subject: string; body: string; html_body?: string; on_behalf_of?: string;
       };
       const requestId = crypto.randomUUID();
       const nonce = crypto.randomUUID();
@@ -149,6 +150,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
         to,
         subject,
         body,
+        htmlBody: html_body,
         customHeaders,
       };
 
