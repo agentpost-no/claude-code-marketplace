@@ -41,6 +41,10 @@ export interface EncryptedEmail {
   isVerifiedReply: boolean;
   /** Sealed box encrypted raw MIME content (base64) */
   encryptedContent: string;
+  /** Original Message-ID from the inbound email (for threading replies) */
+  emailMessageId?: string;
+  /** In-Reply-To header from the inbound email */
+  inReplyTo?: string;
 }
 
 export interface EmailAck {

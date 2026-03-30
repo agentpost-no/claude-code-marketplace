@@ -258,12 +258,24 @@ async function handleIncomingEmail(encrypted: EncryptedEmail) {
 
     const threadContext = email.inReplyTo ? lookupThread(email.inReplyTo) : null;
 
+    // Store this inbound email as a thread entry so we can reply to it.
+    // Use the sender's Message-ID as the key for In-Reply-To when replying.
+    const inboundThreadId = encrypted.emailMessageId ?? encrypted.id;
+    storeThreadContext(inboundThreadId, {
+      to: email.from, // reply goes back to sender
+      subject: email.subject,
+      body: email.textBody.slice(0, 200),
+      timestamp: encrypted.receivedAt,
+      messageId: encrypted.emailMessageId,
+    });
+
     const content = formatEmailContent(email, threadContext);
 
     const meta: Record<string, string> = {
       source: "email",
       message_id: encrypted.id,
       is_verified_reply: String(encrypted.isVerifiedReply),
+      reply_thread_id: inboundThreadId,
     };
 
     if (threadContext) {
