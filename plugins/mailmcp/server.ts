@@ -10,7 +10,7 @@ import { parseEmail, formatEmailContent, saveAttachments } from "./email-parser.
 import { createWsClient } from "./ws-client.js";
 import { loadConfig, saveConfig, getWorkerUrl, register } from "./store.js";
 import type { Config } from "./types.js";
-import type { EncryptedEmail, SendEmailRequest, SendEmailResult } from "./protocol.js";
+import type { EncryptedEmail, SendEmailRequest, SendEmailResult, DeliveryNotification } from "./protocol.js";
 
 // --- State ---
 const keys = loadOrGenerateKeys();
@@ -346,6 +346,36 @@ async function handleIncomingEmail(encrypted: EncryptedEmail) {
   }
 }
 
+// --- Delivery notification handling ---
+async function handleDeliveryNotification(notification: DeliveryNotification) {
+  const labels: Record<string, string> = {
+    delivered: "Delivered",
+    bounced: "Bounced",
+    spam_complaint: "Spam Complaint",
+    opened: "Opened",
+  };
+  const label = labels[notification.event] ?? notification.event;
+  const content = [
+    `[${label}] ${notification.description}`,
+    `Recipient: ${notification.recipient}`,
+    `Message-ID: ${notification.messageId}`,
+    `Time: ${notification.timestamp}`,
+  ].join("\n");
+
+  await mcp.notification({
+    method: "notifications/claude/channel",
+    params: {
+      meta: {
+        source: "email",
+        event: notification.event,
+        message_id: notification.messageId,
+        recipient: notification.recipient,
+      },
+      content,
+    },
+  });
+}
+
 // --- WebSocket ---
 let wsClient: ReturnType<typeof createWsClient> | null = null;
 
@@ -362,6 +392,9 @@ function startWebSocket(cfg: Config) {
     },
     onEmail(encrypted) {
       handleIncomingEmail(encrypted);
+    },
+    onDeliveryNotification(notification) {
+      handleDeliveryNotification(notification);
     },
     onSendResult(result) {
       const pending = pendingSends.get(result.requestId);

@@ -60,6 +60,7 @@ export interface WsClientEvents {
   onAuthenticated: () => void;
   onEmail: (email: import("./protocol.js").EncryptedEmail) => void;
   onSendResult: (result: import("./protocol.js").SendEmailResult) => void;
+  onDeliveryNotification: (notification: import("./protocol.js").DeliveryNotification) => void;
   onDrainStart: (count: number) => void;
   onDrainComplete: () => void;
   onDisconnect: () => void;

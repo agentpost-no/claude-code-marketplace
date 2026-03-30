@@ -72,6 +72,9 @@ export function createWsClient(
       case "send_email_result":
         events.onSendResult(msg);
         break;
+      case "delivery_notification":
+        events.onDeliveryNotification(msg);
+        break;
       case "store_drain":
         events.onDrainStart(msg.count);
         break;

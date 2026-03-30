@@ -120,6 +120,22 @@ export interface ClaimThreads {
   messageIds: string[];
 }
 
+// --- Delivery Notifications ---
+
+export interface DeliveryNotification {
+  type: "delivery_notification";
+  /** Original Message-ID this notification is about */
+  messageId: string;
+  /** Event type */
+  event: "delivered" | "bounced" | "spam_complaint" | "opened";
+  /** Human-readable description */
+  description: string;
+  /** Recipient address */
+  recipient: string;
+  /** ISO timestamp of the event */
+  timestamp: string;
+}
+
 // --- Union types for WebSocket messages ---
 
 export type WorkerToClient =
@@ -128,7 +144,8 @@ export type WorkerToClient =
   | EncryptedEmail
   | StoreDrain
   | StoreDrainComplete
-  | SendEmailResult;
+  | SendEmailResult
+  | DeliveryNotification;
 
 export type ClientToWorker =
   | AuthResponse
