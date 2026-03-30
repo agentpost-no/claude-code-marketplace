@@ -5,7 +5,7 @@ import {
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { loadOrGenerateKeys, loadOrGenerateHmacKey, sealedBoxDecrypt, toBase64, fromBase64 } from "./crypto.js";
-import { signThread, storeThreadContext, lookupThread } from "./thread.js";
+import { signThread, storeThreadContext, lookupThread, getAllMessageIds } from "./thread.js";
 import { parseEmail, formatEmailContent, saveAttachments } from "./email-parser.js";
 import { createWsClient } from "./ws-client.js";
 import { loadConfig, saveConfig, getWorkerUrl, register } from "./store.js";
@@ -294,6 +294,11 @@ function startWebSocket(cfg: Config) {
     onAuthenticated() {
       authenticated = true;
       console.error(`[mailmcp] Connected and authenticated. Email: ${cfg.email}`);
+      // Claim our outbound message IDs so replies route to this instance
+      const messageIds = getAllMessageIds();
+      if (messageIds.length > 0) {
+        wsClient!.send({ type: "claim_threads", messageIds });
+      }
     },
     onEmail(encrypted) {
       handleIncomingEmail(encrypted);

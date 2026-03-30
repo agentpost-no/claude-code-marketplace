@@ -61,3 +61,9 @@ export function lookupThread(messageIdOrThreadId: string): ThreadContext | null 
 
   return null;
 }
+
+/** Return all known outbound Message-IDs for thread claim. */
+export function getAllMessageIds(): string[] {
+  const store = getStore();
+  return Object.keys(store.messageIndex);
+}

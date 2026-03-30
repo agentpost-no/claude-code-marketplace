@@ -100,6 +100,14 @@ export interface RegisterResponse {
   agentId: string;
 }
 
+// --- Thread Ownership ---
+
+export interface ClaimThreads {
+  type: "claim_threads";
+  /** Message-IDs of outbound emails this client owns */
+  messageIds: string[];
+}
+
 // --- Union types for WebSocket messages ---
 
 export type WorkerToClient =
@@ -113,4 +121,5 @@ export type WorkerToClient =
 export type ClientToWorker =
   | AuthResponse
   | EmailAck
-  | SendEmailRequest;
+  | SendEmailRequest
+  | ClaimThreads;
