@@ -1,0 +1,27 @@
+{
+  "name": "mailmcp",
+  "version": "0.0.1",
+  "description": "E2E-encrypted email channel for Claude Code. Receive and send email with zero plaintext on the server.",
+  "author": {
+    "name": "Ole Melhus",
+    "url": "https://github.com/omelhus"
+  },
+  "repository": "https://github.com/omelhus/claude-mailmcp-plugin",
+  "license": "Apache-2.0",
+  "keywords": ["channel", "email", "e2e-encryption", "mailmcp"],
+  "channels": [
+    {
+      "server": "mailmcp",
+      "userConfig": {
+        "worker_url": {
+          "description": "Worker URL for the mailmcp backend",
+          "sensitive": false
+        },
+        "username": {
+          "description": "Username for your email address (e.g., 'claude' gives claude@mail.mcp.run)",
+          "sensitive": false
+        }
+      }
+    }
+  ]
+}

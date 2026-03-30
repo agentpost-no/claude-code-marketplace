@@ -1,0 +1,116 @@
+/**
+ * Wire protocol types shared between worker and client.
+ * Copy this file to both worker/src/ and client/ when updating.
+ */
+
+// --- Authentication ---
+
+export interface AuthChallenge {
+  type: "auth_challenge";
+  /** Sealed box encrypted challenge (base64) */
+  encryptedChallenge: string;
+}
+
+export interface AuthResponse {
+  type: "auth_response";
+  /** Decrypted challenge bytes (base64) */
+  challenge: string;
+}
+
+export interface AuthResult {
+  type: "auth_result";
+  success: boolean;
+  error?: string;
+}
+
+// --- Email Messages ---
+
+export interface EncryptedEmail {
+  type: "encrypted_email";
+  /** Unique message ID assigned by the worker */
+  id: string;
+  /** Sender address (plaintext metadata - not sensitive) */
+  from: string;
+  /** Recipient address */
+  to: string;
+  /** Timestamp of receipt (ISO 8601) */
+  receivedAt: string;
+  /** Size of the encrypted payload in bytes */
+  size: number;
+  /** Whether this is a verified reply to an outbound email (via Cloudflare HMAC) */
+  isVerifiedReply: boolean;
+  /** Sealed box encrypted raw MIME content (base64) */
+  encryptedContent: string;
+}
+
+export interface EmailAck {
+  type: "email_ack";
+  /** Message ID being acknowledged */
+  id: string;
+}
+
+// --- Sending ---
+
+export interface SendEmailRequest {
+  type: "send_email";
+  /** Client-generated request ID for correlation */
+  requestId: string;
+  /** Recipient address */
+  to: string;
+  /** Email subject */
+  subject: string;
+  /** Plain text body */
+  body: string;
+  /** Optional custom headers (e.g., thread tracking) */
+  customHeaders?: Record<string, string>;
+}
+
+export interface SendEmailResult {
+  type: "send_email_result";
+  /** Echoed request ID */
+  requestId: string;
+  success: boolean;
+  /** Message-ID header assigned by the mail system */
+  messageId?: string;
+  error?: string;
+}
+
+// --- Store and Forward ---
+
+export interface StoreDrain {
+  type: "store_drain";
+  /** Number of stored messages about to be sent */
+  count: number;
+}
+
+export interface StoreDrainComplete {
+  type: "store_drain_complete";
+}
+
+// --- Registration ---
+
+export interface RegisterRequest {
+  username: string;
+  /** X25519 public key (base64) */
+  publicKey: string;
+}
+
+export interface RegisterResponse {
+  email: string;
+  agentId: string;
+}
+
+// --- Union types for WebSocket messages ---
+
+export type WorkerToClient =
+  | AuthChallenge
+  | AuthResult
+  | EncryptedEmail
+  | StoreDrain
+  | StoreDrainComplete
+  | SendEmailResult;
+
+export type ClientToWorker =
+  | AuthResponse
+  | EmailAck
+  | SendEmailRequest;
