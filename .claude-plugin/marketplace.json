@@ -16,7 +16,7 @@
         "name": "Ole Melhus",
         "email": "ole@on-it.no"
       },
-      "source": "./",
+      "source": "./plugins/mailmcp",
       "homepage": "https://github.com/omelhus/claude-mailmcp-plugin",
       "tags": ["channel", "email", "encryption", "e2e"]
     }
