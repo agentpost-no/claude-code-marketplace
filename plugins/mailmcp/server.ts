@@ -76,13 +76,14 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "send_email",
-      description: "Send a new email to a recipient",
+      description: "Send a new email to a recipient. Use on_behalf_of when sending on behalf of the user.",
       inputSchema: {
         type: "object" as const,
         properties: {
           to: { type: "string", description: "Recipient email address" },
           subject: { type: "string", description: "Email subject" },
           body: { type: "string", description: "Plain text email body" },
+          on_behalf_of: { type: "string", description: "Name of the person this email is sent on behalf of (e.g. 'Ole Melhus'). Shows as 'Agentus on behalf of Ole Melhus' in the From field." },
         },
         required: ["to", "subject", "body"],
       },
@@ -119,7 +120,9 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 
   switch (name) {
     case "send_email": {
-      const { to, subject, body } = args as { to: string; subject: string; body: string };
+      const { to, subject, body, on_behalf_of } = args as {
+        to: string; subject: string; body: string; on_behalf_of?: string;
+      };
       const requestId = crypto.randomUUID();
       const nonce = crypto.randomUUID();
       const timestamp = new Date().toISOString();
@@ -132,16 +135,21 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
         nonce,
       });
 
+      const customHeaders: Record<string, string> = {
+        "X-Mailmcp-Thread-Id": threadId,
+        "X-Mailmcp-Nonce": nonce,
+      };
+      if (on_behalf_of) {
+        customHeaders["X-Mailmcp-On-Behalf-Of"] = on_behalf_of;
+      }
+
       const sendMsg: SendEmailRequest = {
         type: "send_email",
         requestId,
         to,
         subject,
         body,
-        customHeaders: {
-          "X-Mailmcp-Thread-Id": threadId,
-          "X-Mailmcp-Nonce": nonce,
-        },
+        customHeaders,
       };
 
       const result = await sendAndWait(sendMsg, requestId);
