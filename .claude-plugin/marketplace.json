@@ -1,0 +1,24 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "omelhus",
+  "description": "Ole Melhus plugins for Claude Code",
+  "owner": {
+    "name": "Ole Melhus",
+    "email": "ole@on-it.no"
+  },
+  "plugins": [
+    {
+      "name": "mailmcp",
+      "description": "E2E-encrypted email channel for Claude Code. Receive and send email with zero plaintext on the server.",
+      "version": "0.0.1",
+      "category": "productivity",
+      "author": {
+        "name": "Ole Melhus",
+        "email": "ole@on-it.no"
+      },
+      "source": "./",
+      "homepage": "https://github.com/omelhus/claude-mailmcp-plugin",
+      "tags": ["channel", "email", "encryption", "e2e"]
+    }
+  ]
+}
