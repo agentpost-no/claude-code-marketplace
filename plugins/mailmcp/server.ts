@@ -1,13 +1,13 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { loadOrGenerateKeys, loadOrGenerateHmacKey, sealedBoxDecrypt, toBase64, fromBase64 } from "./crypto.js";
-import { signThread, storeThreadContext, lookupThread, getAllMessageIds } from "./thread.js";
-import { parseEmail, formatEmailContent, saveAttachments } from "./email-parser.js";
-import { createWsClient } from "./ws-client.js";
-import { loadConfig, saveConfig, getWorkerUrl, register } from "./store.js";
+import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { fromBase64, loadOrGenerateHmacKey, loadOrGenerateKeys, sealedBoxDecrypt, toBase64 } from "./crypto.js";
+import { formatEmailContent, parseEmail, saveAttachments } from "./email-parser.js";
+import type { DeliveryNotification, EncryptedEmail, SendEmailRequest, SendEmailResult } from "./protocol.js";
+import { getWorkerUrl, loadConfig, register, saveConfig } from "./store.js";
+import { getAllMessageIds, lookupThread, signThread, storeThreadContext } from "./thread.js";
 import type { Config } from "./types.js";
-import type { EncryptedEmail, SendEmailRequest, SendEmailResult, DeliveryNotification } from "./protocol.js";
+import { createWsClient } from "./ws-client.js";
 
 // --- State ---
 const keys = loadOrGenerateKeys();
@@ -306,7 +306,7 @@ function sendAndWait(msg: SendEmailRequest, requestId: string): Promise<SendEmai
 		}, 30_000);
 
 		pendingSends.set(requestId, { resolve, timer });
-		wsClient!.send(msg);
+		wsClient?.send(msg);
 	});
 }
 
@@ -402,7 +402,7 @@ function startWebSocket(cfg: Config) {
 			// Claim our outbound message IDs so replies route to this instance
 			const messageIds = getAllMessageIds();
 			if (messageIds.length > 0) {
-				wsClient!.send({ type: "claim_threads", messageIds });
+				wsClient?.send({ type: "claim_threads", messageIds });
 			}
 		},
 		onEmail(encrypted) {

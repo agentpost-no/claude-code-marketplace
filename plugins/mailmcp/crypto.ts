@@ -1,5 +1,5 @@
-import { createRequire } from "node:module";
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import { KEYS_DIR } from "./paths.js";
 import type { KeyPair } from "./types.js";

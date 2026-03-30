@@ -1,8 +1,8 @@
-import PostalMime from "postal-mime";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import PostalMime from "postal-mime";
 import { ATTACHMENTS_DIR } from "./paths.js";
-import type { ParsedEmail, ParsedAttachment, AttachmentInfo, ThreadContext } from "./types.js";
+import type { AttachmentInfo, ParsedAttachment, ParsedEmail, ThreadContext } from "./types.js";
 
 function normalizeAttachmentContent(content: unknown): Uint8Array {
 	if (content instanceof ArrayBuffer) return new Uint8Array(content);
@@ -49,6 +49,7 @@ export async function parseEmail(rawMime: Uint8Array): Promise<ParsedEmail> {
 }
 
 function escapeUntrusted(s: string): string {
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional - strip control chars from untrusted email content
 	return s.replace(/[\r\n\t]/g, " ").replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "");
 }
 

@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
-import { THREADS_PATH } from "./paths.js";
-import { loadJsonFile, saveJsonFile } from "./file-store.js";
 import { hmac } from "./crypto.js";
+import { loadJsonFile, saveJsonFile } from "./file-store.js";
+import { THREADS_PATH } from "./paths.js";
 import type { ThreadContext, ThreadSignInput } from "./types.js";
 
 const require = createRequire(import.meta.url);

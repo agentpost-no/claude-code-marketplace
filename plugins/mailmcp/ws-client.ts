@@ -1,6 +1,6 @@
-import { sealedBoxDecrypt, fromBase64, toBase64 } from "./crypto.js";
-import type { KeyPair, WsClientEvents, WsClient } from "./types.js";
-import type { WorkerToClient, ClientToWorker } from "./protocol.js";
+import { fromBase64, sealedBoxDecrypt, toBase64 } from "./crypto.js";
+import type { ClientToWorker, WorkerToClient } from "./protocol.js";
+import type { KeyPair, WsClient, WsClientEvents } from "./types.js";
 
 const INITIAL_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 30000;
