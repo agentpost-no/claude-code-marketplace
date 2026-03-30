@@ -19,7 +19,7 @@ export function createWsClient(
   function connect() {
     if (closed) return;
 
-    const wsUrl = `${url.replace(/^http/, "ws")}/agents/MailAgent/${agentId}`;
+    const wsUrl = `${url.replace(/^http/, "ws")}/agents/mail-agent/${agentId}`;
     ws = new WebSocket(wsUrl);
 
     ws.addEventListener("open", () => {
