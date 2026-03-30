@@ -8,6 +8,8 @@ export interface Config {
   agentId: string;
   email: string;
   username: string;
+  status?: "pending" | "active";
+  ownerEmail?: string;
 }
 
 export interface ParsedEmail {

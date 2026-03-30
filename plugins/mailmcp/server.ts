@@ -58,7 +58,7 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: "register_email",
-      description: "Register an email address. Pick a short, memorable username. Returns the full email address on success, or an error if the name is taken.",
+      description: "Register an email address. Requires owner verification via email link. Returns pending status until owner clicks the verification link.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -66,12 +66,16 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
             type: "string",
             description: "Desired username (lowercase alphanumeric, dots, hyphens). Becomes username@mcp-server.fun",
           },
+          owner_email: {
+            type: "string",
+            description: "Owner's email address. A verification link will be sent here. Required.",
+          },
           display_name: {
             type: "string",
             description: "Display name shown in emails (e.g. 'Agentus'). Defaults to capitalized username.",
           },
         },
-        required: ["username"],
+        required: ["username", "owner_email"],
       },
     },
     {
@@ -108,7 +112,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: args } = req.params;
 
   if (name === "register_email") {
-    return handleRegisterEmail(args as { username: string; display_name?: string });
+    return handleRegisterEmail(args as { username: string; owner_email: string; display_name?: string });
   }
 
   if (!config) {
@@ -207,9 +211,14 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 });
 
 // --- Register email ---
-async function handleRegisterEmail(args: { username: string; display_name?: string }) {
-  if (config) {
+async function handleRegisterEmail(args: { username: string; owner_email: string; display_name?: string }) {
+  if (config && config.status === "active") {
     return toolOk(`Already registered as ${config.email}. To change, delete ~/.claude/channels/mailmcp/config.json and restart.`);
+  }
+
+  // If pending, poll for activation
+  if (config && config.status === "pending") {
+    return pollForActivation(config);
   }
 
   const username = args.username.toLowerCase().trim();
@@ -220,26 +229,51 @@ async function handleRegisterEmail(args: { username: string; display_name?: stri
   const workerUrl = getWorkerUrl();
 
   try {
-    const result = await register(workerUrl, username, publicKeyB64, args.display_name);
+    const result = await register(workerUrl, username, publicKeyB64, args.display_name, args.owner_email);
 
     config = {
       workerUrl,
       agentId: result.agentId,
       email: result.email,
       username,
+      status: result.status,
     };
     saveConfig(config);
 
-    // Connect WebSocket now that we're registered
-    startWebSocket(config);
+    if (result.status === "active") {
+      startWebSocket(config);
+      return toolOk(`Registered! Your email address is ${result.email}`);
+    }
 
-    return toolOk(`Registered! Your email address is ${result.email}`);
+    return toolOk(
+      `Verification email sent to ${args.owner_email}. ` +
+      `Ask the owner to click the link, then call register_email again with the same username to complete activation.`
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("409") || msg.includes("different key")) {
       return toolError(`Username "${username}" is already taken. Try a different one.`);
     }
     return toolError(`Registration failed: ${msg}`);
+  }
+}
+
+async function pollForActivation(cfg: Config) {
+  try {
+    const res = await fetch(`${cfg.workerUrl}/api/status/${cfg.agentId}`);
+    if (!res.ok) return toolError("Failed to check status");
+    const data = (await res.json()) as { status: string };
+
+    if (data.status === "active") {
+      cfg.status = "active";
+      saveConfig(cfg);
+      startWebSocket(cfg);
+      return toolOk(`Verified! Your email address ${cfg.email} is now active.`);
+    }
+
+    return toolOk("Still pending verification. Ask the owner to check their email and click the verification link.");
+  } catch (err) {
+    return toolError(`Status check failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -374,9 +408,10 @@ process.stdin.on("end", shutdown);
 
 // --- Main ---
 async function main() {
-  // If already registered, connect immediately
-  if (config) {
+  if (config && config.status === "active") {
     startWebSocket(config);
+  } else if (config && config.status === "pending") {
+    console.error("[mailmcp] Registration pending verification. Call register_email to check status.");
   } else {
     console.error("[mailmcp] No email registered. Use register_email tool to pick a username.");
   }

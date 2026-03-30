@@ -21,11 +21,20 @@ export async function parseEmail(rawMime: Uint8Array): Promise<ParsedEmail> {
   const parsed = await parser.parse(rawMime);
 
   const attachments: ParsedAttachment[] = (parsed.attachments ?? []).map(
-    (a) => {
+    (a, i) => {
       const buf = normalizeAttachmentContent(a.content);
+      const mime = a.mimeType ?? "application/octet-stream";
+      const ext = mime.split("/")[1] ?? "bin";
+      let filename = a.filename;
+      if (!filename && a.contentId) {
+        filename = `inline-${a.contentId.replace(/[<>]/g, "")}.${ext}`;
+      }
+      if (!filename) {
+        filename = a.mimeType ? `attachment-${i}.${ext}` : "unnamed";
+      }
       return {
-        filename: a.filename ?? "unnamed",
-        mimeType: a.mimeType ?? "application/octet-stream",
+        filename,
+        mimeType: mime,
         content: buf,
         size: buf.byteLength,
       };
@@ -40,7 +49,7 @@ export async function parseEmail(rawMime: Uint8Array): Promise<ParsedEmail> {
     messageId: parsed.messageId ?? "",
     inReplyTo: parsed.inReplyTo ?? undefined,
     references: parsed.references ?? undefined,
-    textBody: parsed.text ?? "",
+    textBody: parsed.text || parsed.html?.replace(/<[^>]*>/g, "") || "",
     htmlBody: parsed.html ?? undefined,
     attachments,
   };

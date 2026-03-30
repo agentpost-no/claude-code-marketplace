@@ -101,11 +101,15 @@ export interface RegisterRequest {
   publicKey: string;
   /** Display name for outbound email (defaults to capitalized username) */
   displayName?: string;
+  /** Owner's email for verification */
+  ownerEmail: string;
 }
 
 export interface RegisterResponse {
   email: string;
   agentId: string;
+  status: "pending" | "active";
+  message?: string;
 }
 
 // --- Thread Ownership ---

@@ -18,7 +18,7 @@
           "sensitive": false
         },
         "username": {
-          "description": "Username for your email address (e.g., 'claude' gives claude@mail.mcp.run)",
+          "description": "Username for your email address (e.g., 'claude' gives claude@mcp-server.fun)",
           "sensitive": false
         }
       }
