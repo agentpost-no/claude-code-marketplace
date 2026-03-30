@@ -76,13 +76,13 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "send_email",
-      description: "Send a new email to a recipient. Use on_behalf_of when sending on behalf of the user.",
+      description: "Send a new email. Supports full UTF-8 (including æ, ø, å). Use on_behalf_of when sending on behalf of the user.",
       inputSchema: {
         type: "object" as const,
         properties: {
           to: { type: "string", description: "Recipient email address" },
-          subject: { type: "string", description: "Email subject" },
-          body: { type: "string", description: "Plain text email body" },
+          subject: { type: "string", description: "Email subject (UTF-8, supports æøå)" },
+          body: { type: "string", description: "Plain text email body (UTF-8, supports æøå)" },
           on_behalf_of: { type: "string", description: "Name of the person this email is sent on behalf of (e.g. 'Ole Melhus'). Shows as 'Agentus on behalf of Ole Melhus' in the From field." },
         },
         required: ["to", "subject", "body"],
@@ -90,12 +90,12 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "reply_to_email",
-      description: "Reply to an existing email thread",
+      description: "Reply to an existing email thread. Supports full UTF-8 (including æ, ø, å).",
       inputSchema: {
         type: "object" as const,
         properties: {
           thread_id: { type: "string", description: "Thread ID from the original email notification" },
-          body: { type: "string", description: "Plain text reply body" },
+          body: { type: "string", description: "Plain text reply body (UTF-8, supports æøå)" },
         },
         required: ["thread_id", "body"],
       },
