@@ -6,35 +6,35 @@ import type { RegisterRequest, RegisterResponse } from "./protocol.js";
 const DEFAULT_WORKER_URL = "https://mailmcp-worker.on-it.workers.dev";
 
 export function loadConfig(): Config | null {
-  return loadJsonFile<Config | null>(CONFIG_PATH, null);
+	return loadJsonFile<Config | null>(CONFIG_PATH, null);
 }
 
 export function saveConfig(config: Config): void {
-  saveJsonFile(CONFIG_PATH, config);
+	saveJsonFile(CONFIG_PATH, config);
 }
 
 export function getWorkerUrl(): string {
-  return process.env.MAILMCP_WORKER_URL ?? DEFAULT_WORKER_URL;
+	return process.env.MAILMCP_WORKER_URL ?? DEFAULT_WORKER_URL;
 }
 
 export async function register(
-  workerUrl: string,
-  username: string,
-  publicKey: string,
-  displayName?: string,
-  ownerEmail?: string
+	workerUrl: string,
+	username: string,
+	publicKey: string,
+	displayName?: string,
+	ownerEmail?: string,
 ): Promise<RegisterResponse> {
-  const body: RegisterRequest = { username, publicKey, displayName, ownerEmail: ownerEmail ?? "" };
-  const res = await fetch(`${workerUrl}/api/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+	const body: RegisterRequest = { username, publicKey, displayName, ownerEmail: ownerEmail ?? "" };
+	const res = await fetch(`${workerUrl}/api/register`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+	});
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Registration failed (${res.status}): ${text}`);
-  }
+	if (!res.ok) {
+		const text = await res.text();
+		throw new Error(`Registration failed (${res.status}): ${text}`);
+	}
 
-  return (await res.json()) as RegisterResponse;
+	return (await res.json()) as RegisterResponse;
 }

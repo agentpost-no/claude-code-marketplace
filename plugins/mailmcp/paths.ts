@@ -1,11 +1,6 @@
 import { join } from "node:path";
 
-const BASE = join(
-  process.env.HOME ?? "~",
-  ".claude",
-  "channels",
-  "mailmcp"
-);
+const BASE = join(process.env.HOME ?? "~", ".claude", "channels", "mailmcp");
 
 export const KEYS_DIR = join(BASE, "keys");
 export const ATTACHMENTS_DIR = join(BASE, "attachments");
