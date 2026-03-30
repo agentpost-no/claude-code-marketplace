@@ -64,7 +64,7 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           username: {
             type: "string",
-            description: "Desired username (lowercase alphanumeric, dots, hyphens). Becomes username@mailmcp.dev",
+            description: "Desired username (lowercase alphanumeric, dots, hyphens). Becomes username@agentpost.no",
           },
           owner_email: {
             type: "string",

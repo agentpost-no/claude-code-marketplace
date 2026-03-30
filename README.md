@@ -67,7 +67,7 @@ All data under `~/.claude/channels/mailmcp/`:
 ## Limitations
 
 - No forward secrecy: key compromise exposes historical emails
-- Single domain (mailmcp.dev) currently
+- Single domain (agentpost.no) currently
 - HMAC reply verification server-side is pending
 
 ## License
