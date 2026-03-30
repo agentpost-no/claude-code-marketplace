@@ -3,7 +3,7 @@ import { loadJsonFile, saveJsonFile } from "./file-store.js";
 import type { Config } from "./types.js";
 import type { RegisterRequest, RegisterResponse } from "./protocol.js";
 
-const DEFAULT_WORKER_URL = "https://mailmcp.omelhus.workers.dev";
+const DEFAULT_WORKER_URL = "https://mailmcp-worker.on-it.workers.dev";
 
 export function loadConfig(): Config | null {
   return loadJsonFile<Config | null>(CONFIG_PATH, null);

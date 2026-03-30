@@ -38,5 +38,5 @@ All under `~/.claude/channels/mailmcp/`:
 
 ## Env Vars
 
-- `MAILMCP_WORKER_URL` - defaults to https://mailmcp.omelhus.workers.dev
+- `MAILMCP_WORKER_URL` - defaults to https://mailmcp-worker.on-it.workers.dev
 - `MAILMCP_USERNAME` - defaults to claude-{timestamp}

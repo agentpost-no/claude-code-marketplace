@@ -17,7 +17,7 @@ On first start, the plugin generates an X25519 keypair and registers with the ba
 After installing, configure your preferences:
 
 ```bash
-/mailmcp:configure worker_url https://mailmcp.omelhus.workers.dev
+/mailmcp:configure worker_url https://mailmcp-worker.on-it.workers.dev
 /mailmcp:configure username my-claude
 ```
 
@@ -25,7 +25,7 @@ Or set via environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MAILMCP_WORKER_URL` | `https://mailmcp.omelhus.workers.dev` | Backend worker URL |
+| `MAILMCP_WORKER_URL` | `https://mailmcp-worker.on-it.workers.dev` | Backend worker URL |
 | `MAILMCP_USERNAME` | `claude-{timestamp}` | Username for your email address |
 
 ## Tools
