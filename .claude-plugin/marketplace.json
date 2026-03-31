@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "omelhus",
-  "description": "Ole Melhus plugins for Claude Code",
+  "name": "agentpost-no",
+  "description": "Agentpost plugins for Claude Code",
   "owner": {
     "name": "Ole Melhus",
     "email": "ole@on-it.no"
