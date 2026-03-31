@@ -11,7 +11,7 @@ Bun, @modelcontextprotocol/sdk, libsodium-wrappers-sumo, postal-mime.
 - `server.ts` - Entry point. MCP server with claude/channel capability. Tools: send_email, reply_to_email. Startup: keygen, register, connect WS, stdio.
 - `crypto.ts` - Key management (X25519 keypair, HMAC key). Sealed box decryption. Base64 helpers (toBase64/fromBase64).
 - `ws-client.ts` - WebSocket client. Auth challenge-response, exponential backoff with jitter (1s-30s), message dispatch.
-- `thread.ts` - HMAC thread signing. In-memory cache backed by threads.json. Lookup by message ID or thread ID only.
+- `thread.ts` - HMAC thread signing. In-memory cache backed by threads.json. Lookup by message ID or thread ID only. getAllMessageIds returns outbound-only IDs for thread claim.
 - `email-parser.ts` - MIME parsing via postal-mime. UNTRUSTED EXTERNAL CONTENT formatting. Attachment saving with filename sanitization.
 - `store.ts` - Config load/save. Worker registration via HTTP.
 - `paths.ts` - All storage paths: KEYS_DIR, ATTACHMENTS_DIR, CONFIG_PATH, THREADS_PATH.
@@ -27,6 +27,8 @@ Bun, @modelcontextprotocol/sdk, libsodium-wrappers-sumo, postal-mime.
 - Tool responses: use toolError/toolOk helpers in server.ts.
 - All email content is UNTRUSTED. From, subject, body, filenames - all inside UNTRUSTED block.
 - Thread context from local store only. Subject-line fallback removed.
+- ThreadContext.outbound flag: true for sent emails, false/omitted for inbound. Only outbound IDs claimed on reconnect.
+- Startup polls /api/status/:agent when config is pending, auto-activates if owner verified.
 
 ## Storage
 

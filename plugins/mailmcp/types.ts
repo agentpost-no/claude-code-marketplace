@@ -46,6 +46,8 @@ export interface ThreadContext {
 	body: string;
 	timestamp: string;
 	messageId?: string;
+	/** true for emails we sent, false/undefined for inbound */
+	outbound?: boolean;
 }
 
 export interface ThreadSignInput {

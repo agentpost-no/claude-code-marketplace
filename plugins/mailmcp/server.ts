@@ -181,7 +181,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 			const result = await sendAndWait(sendMsg, requestId);
 
 			if (result.success) {
-				storeThreadContext(threadId, { to, subject, body, timestamp, messageId: result.messageId });
+				storeThreadContext(threadId, { to, subject, body, timestamp, messageId: result.messageId, outbound: true });
 				return toolOk(`Email sent to ${to}. Thread ID: ${threadId}`);
 			}
 			return toolError(`Failed to send email: ${result.error}`);
@@ -219,6 +219,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 					body,
 					timestamp: new Date().toISOString(),
 					messageId: result.messageId,
+					outbound: true,
 				});
 				return toolOk(`Reply sent to ${thread.to} in thread ${thread_id}`);
 			}
@@ -466,7 +467,20 @@ async function main() {
 	if (config && config.status === "active") {
 		startWebSocket(config);
 	} else if (config && config.status === "pending") {
-		console.error("[mailmcp] Registration pending verification. Call register_email to check status.");
+		// Check if owner has verified since last run
+		try {
+			const res = await fetch(`${config.workerUrl}/api/status/${config.agentId}`);
+			const data = (await res.json()) as { status: string };
+			if (data.status === "active") {
+				config.status = "active";
+				saveConfig(config);
+				startWebSocket(config);
+			} else {
+				console.error("[mailmcp] Registration pending verification. Call register_email to check status.");
+			}
+		} catch {
+			console.error("[mailmcp] Could not check status. Registration pending verification.");
+		}
 	} else {
 		console.error("[mailmcp] No email registered. Use register_email tool to pick a username.");
 	}
