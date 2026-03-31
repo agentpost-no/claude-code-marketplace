@@ -277,6 +277,9 @@ async function handleRegisterEmail(args: { username: string; owner_email: string
 		if (msg.includes("409") || msg.includes("different key")) {
 			return toolError(`Username "${username}" is already taken. Try a different one.`);
 		}
+		if (msg.includes("403") || msg.includes("waitlisted") || msg.includes("ventelisten")) {
+			return toolOk("You are not approved yet. You have been added to the waitlist and will be notified when approved.");
+		}
 		return toolError(`Registration failed: ${msg}`);
 	}
 }
