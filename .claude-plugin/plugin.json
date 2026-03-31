@@ -6,7 +6,7 @@
     "name": "Ole Melhus",
     "url": "https://github.com/omelhus"
   },
-  "repository": "https://github.com/omelhus/claude-mailmcp-plugin",
+  "repository": "https://github.com/agentpost-no/claude-code-marketplace",
   "license": "Apache-2.0",
   "keywords": ["channel", "email", "e2e-encryption", "mailmcp"],
   "channels": [

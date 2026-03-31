@@ -5,9 +5,9 @@ E2E-encrypted email channel. Receive forwarded emails (flight tickets, hotel boo
 ## Setup
 
 ```bash
-/plugin marketplace add omelhus/claude-mailmcp-plugin
-/plugin install mailmcp@omelhus
-claude --channels plugin:mailmcp@omelhus
+/plugin marketplace add agentpost-no/claude-code-marketplace
+/plugin install mailmcp@agentpost-no
+claude --channels plugin:mailmcp@agentpost-no
 ```
 
 On first start, the plugin generates an X25519 keypair and registers with the backend to get an email address.

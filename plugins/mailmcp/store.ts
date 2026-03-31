@@ -3,7 +3,7 @@ import { CONFIG_PATH } from "./paths.js";
 import type { RegisterRequest, RegisterResponse } from "./protocol.js";
 import type { Config } from "./types.js";
 
-const DEFAULT_WORKER_URL = "https://mailmcp-worker.on-it.workers.dev";
+const DEFAULT_WORKER_URL = "https://api.agentpost.no";
 
 export function loadConfig(): Config | null {
 	return loadJsonFile<Config | null>(CONFIG_PATH, null);

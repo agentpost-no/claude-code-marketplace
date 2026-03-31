@@ -17,7 +17,7 @@
         "email": "ole@on-it.no"
       },
       "source": "./plugins/mailmcp",
-      "homepage": "https://github.com/omelhus/claude-mailmcp-plugin",
+      "homepage": "https://github.com/agentpost-no/claude-code-marketplace",
       "tags": ["channel", "email", "encryption", "e2e"]
     }
   ]
