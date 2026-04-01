@@ -1,5 +1,5 @@
 {
-  "name": "mailmcp",
+  "name": "agentpost",
   "version": "0.0.1",
   "description": "E2E-encrypted email channel for Claude Code. Receive and send email with zero plaintext on the server.",
   "author": {
@@ -8,13 +8,13 @@
   },
   "repository": "https://github.com/agentpost-no/claude-code-marketplace",
   "license": "Apache-2.0",
-  "keywords": ["channel", "email", "e2e-encryption", "mailmcp"],
+  "keywords": ["channel", "email", "e2e-encryption", "agentpost"],
   "channels": [
     {
-      "server": "mailmcp",
+      "server": "agentpost",
       "userConfig": {
         "worker_url": {
-          "description": "Worker URL for the mailmcp backend",
+          "description": "Worker URL for the agentpost backend",
           "sensitive": false
         },
         "username": {

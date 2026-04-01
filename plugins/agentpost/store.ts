@@ -14,7 +14,7 @@ export function saveConfig(config: Config): void {
 }
 
 export function getWorkerUrl(): string {
-	return process.env.MAILMCP_WORKER_URL ?? DEFAULT_WORKER_URL;
+	return process.env.AGENTPOST_WORKER_URL ?? DEFAULT_WORKER_URL;
 }
 
 export async function register(

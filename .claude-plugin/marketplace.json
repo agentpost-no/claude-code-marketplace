@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "mailmcp",
+      "name": "agentpost",
       "description": "E2E-encrypted email channel for Claude Code. Receive and send email with zero plaintext on the server.",
       "version": "0.0.1",
       "category": "productivity",
@@ -16,7 +16,7 @@
         "name": "Ole Melhus",
         "email": "ole@on-it.no"
       },
-      "source": "./plugins/mailmcp",
+      "source": "./plugins/agentpost",
       "homepage": "https://github.com/agentpost-no/claude-code-marketplace",
       "tags": ["channel", "email", "encryption", "e2e"]
     }
