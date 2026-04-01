@@ -3,6 +3,11 @@
  * Copy this file to both worker/src/ and client/ when updating.
  */
 
+/** Bump when making breaking protocol changes. */
+export const PROTOCOL_VERSION = 2;
+/** Minimum version the server accepts. */
+export const MIN_PROTOCOL_VERSION = 2;
+
 // --- Authentication ---
 
 export interface AuthChallenge {
@@ -20,7 +25,21 @@ export interface AuthResponse {
 export interface AuthResult {
 	type: "auth_result";
 	success: boolean;
+	/** Short-lived access token for REST API (issued on success) */
+	accessToken?: string;
+	/** Token expiry in seconds */
+	expiresIn?: number;
 	error?: string;
+}
+
+// --- Access Token Refresh ---
+
+export interface TokenRefresh {
+	type: "token_refresh";
+	/** New access token */
+	accessToken: string;
+	/** Token expiry in seconds */
+	expiresIn: number;
 }
 
 // --- Email Messages ---
@@ -53,25 +72,7 @@ export interface EmailAck {
 	id: string;
 }
 
-// --- Sending ---
-
-export interface SendEmailRequest {
-	type: "send_email";
-	/** Client-generated request ID for correlation */
-	requestId: string;
-	/** Recipient address */
-	to: string;
-	/** Email subject */
-	subject: string;
-	/** Plain text body */
-	body: string;
-	/** Optional HTML body (sent alongside text as multipart) */
-	htmlBody?: string;
-	/** Optional custom headers (e.g., thread tracking) */
-	customHeaders?: Record<string, string>;
-	/** Footer language: "no" for Norwegian, "en" for English. Defaults to "en". */
-	footerLang?: "no" | "en";
-}
+// --- Sending (via REST, result delivered via WS) ---
 
 export interface SendEmailResult {
 	type: "send_email_result";
@@ -143,10 +144,11 @@ export interface DeliveryNotification {
 export type WorkerToClient =
 	| AuthChallenge
 	| AuthResult
+	| TokenRefresh
 	| EncryptedEmail
 	| StoreDrain
 	| StoreDrainComplete
 	| SendEmailResult
 	| DeliveryNotification;
 
-export type ClientToWorker = AuthResponse | EmailAck | SendEmailRequest | ClaimThreads;
+export type ClientToWorker = AuthResponse | EmailAck | ClaimThreads;

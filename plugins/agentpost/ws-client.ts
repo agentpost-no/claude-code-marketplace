@@ -1,5 +1,6 @@
 import { fromBase64, sealedBoxDecrypt, toBase64 } from "./crypto.js";
 import type { ClientToWorker, WorkerToClient } from "./protocol.js";
+import { PROTOCOL_VERSION } from "./protocol.js";
 import type { KeyPair, WsClient, WsClientEvents } from "./types.js";
 
 const INITIAL_BACKOFF_MS = 1000;
@@ -10,11 +11,12 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 	let backoff = INITIAL_BACKOFF_MS;
 	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	let closed = false;
+	let accessToken: string | null = null;
 
 	function connect() {
 		if (closed) return;
 
-		const wsUrl = `${url.replace(/^http/, "ws")}/agents/mail-agent/${agentId}`;
+		const wsUrl = `${url.replace(/^http/, "ws")}/agents/mail-agent/${agentId}?v=${PROTOCOL_VERSION}`;
 		ws = new WebSocket(wsUrl);
 
 		ws.addEventListener("open", () => {
@@ -34,6 +36,7 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 
 		ws.addEventListener("close", () => {
 			if (closed) return;
+			accessToken = null;
 			events.onDisconnect();
 			scheduleReconnect();
 		});
@@ -56,10 +59,14 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 			}
 			case "auth_result":
 				if (msg.success) {
+					accessToken = msg.accessToken ?? null;
 					events.onAuthenticated();
 				} else {
 					console.error("[agentpost] Auth failed:", msg.error);
 				}
+				break;
+			case "token_refresh":
+				accessToken = msg.accessToken;
 				break;
 			case "encrypted_email":
 				events.onEmail(msg);
@@ -94,8 +101,13 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		}
 	}
 
+	function getAccessToken(): string | null {
+		return accessToken;
+	}
+
 	function close() {
 		closed = true;
+		accessToken = null;
 		if (reconnectTimer) {
 			clearTimeout(reconnectTimer);
 			reconnectTimer = null;
@@ -106,5 +118,5 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		}
 	}
 
-	return { connect, close, send };
+	return { connect, close, send, getAccessToken };
 }

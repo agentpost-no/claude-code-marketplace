@@ -72,4 +72,5 @@ export interface WsClient {
 	connect(): void;
 	close(): void;
 	send(msg: import("./protocol.js").ClientToWorker): void;
+	getAccessToken(): string | null;
 }
