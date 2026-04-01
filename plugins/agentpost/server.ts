@@ -133,6 +133,10 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 		return toolError("No email address registered yet. Use register_email to pick a username first.");
 	}
 
+	if (config.status === "pending") {
+		return pollForActivation(config);
+	}
+
 	if (!wsClient || !authenticated) {
 		return toolError("Email not connected. Waiting for WebSocket authentication.");
 	}
@@ -270,7 +274,7 @@ async function handleRegisterEmail(args: { username: string; owner_email: string
 
 		return toolOk(
 			`Verification email sent to ${args.owner_email}. ` +
-				`Ask the owner to click the link, then call register_email again with the same username to complete activation.`,
+				`Ask the owner to click the link, then try sending an email to complete activation.`,
 		);
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
