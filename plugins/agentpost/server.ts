@@ -3,7 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { fromBase64, loadOrGenerateHmacKey, loadOrGenerateKeys, sealedBoxDecrypt, toBase64 } from "./crypto.js";
 import { formatEmailContent, parseEmail, saveAttachments } from "./email-parser.js";
-import type { DeliveryNotification, EncryptedEmail, SendEmailRequest, SendEmailResult } from "./protocol.js";
+import type { DeliveryNotification, EncryptedEmail } from "./protocol.js";
 import { getWorkerUrl, loadConfig, register, saveConfig } from "./store.js";
 import { getAllMessageIds, lookupThread, signThread, storeThreadContext } from "./thread.js";
 import type { Config } from "./types.js";
@@ -17,13 +17,6 @@ const publicKeyB64 = toBase64(keys.publicKey);
 let config: Config | null = loadConfig();
 let authenticated = false;
 
-const pendingSends = new Map<
-	string,
-	{
-		resolve: (result: SendEmailResult) => void;
-		timer: ReturnType<typeof setTimeout>;
-	}
->();
 
 // --- Response helpers ---
 function toolError(message: string) {
@@ -151,7 +144,6 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				on_behalf_of?: string;
 				footer_language?: "no" | "en";
 			};
-			const requestId = crypto.randomUUID();
 			const nonce = crypto.randomUUID();
 			const timestamp = new Date().toISOString();
 
@@ -171,18 +163,14 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				customHeaders["X-Agentpost-On-Behalf-Of"] = on_behalf_of;
 			}
 
-			const sendMsg: SendEmailRequest = {
-				type: "send_email",
-				requestId,
+			const result = await sendViaRest({
 				to,
 				subject,
 				body,
-				htmlBody: html_body,
-				customHeaders,
-				footerLang: footer_language,
-			};
-
-			const result = await sendAndWait(sendMsg, requestId);
+				html_body,
+				custom_headers: customHeaders,
+				footer_language,
+			});
 
 			if (result.success) {
 				storeThreadContext(threadId, { to, subject, body, timestamp, messageId: result.messageId, outbound: true });
@@ -199,22 +187,17 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				return toolError(`Thread not found: ${thread_id}`);
 			}
 
-			const requestId = crypto.randomUUID();
 			const subject = thread.subject.startsWith("Re:") ? thread.subject : `Re: ${thread.subject}`;
 
-			const sendMsg: SendEmailRequest = {
-				type: "send_email",
-				requestId,
+			const result = await sendViaRest({
 				to: thread.to,
 				subject,
 				body,
-				customHeaders: {
+				custom_headers: {
 					"X-Agentpost-Thread-Id": thread_id,
 					...(thread.messageId ? { "In-Reply-To": thread.messageId } : {}),
 				},
-			};
-
-			const result = await sendAndWait(sendMsg, requestId);
+			});
 
 			if (result.success) {
 				storeThreadContext(thread_id, {
@@ -307,22 +290,37 @@ async function pollForActivation(cfg: Config) {
 	}
 }
 
-// --- Send and wait for result ---
-function sendAndWait(msg: SendEmailRequest, requestId: string): Promise<SendEmailResult> {
-	return new Promise((resolve) => {
-		const timer = setTimeout(() => {
-			pendingSends.delete(requestId);
-			resolve({
-				type: "send_email_result",
-				requestId,
-				success: false,
-				error: "Send timeout (30s)",
-			});
-		}, 30_000);
+// --- Send via REST API ---
+async function sendViaRest(params: {
+	to: string;
+	subject: string;
+	body: string;
+	html_body?: string;
+	custom_headers?: Record<string, string>;
+	footer_language?: "no" | "en";
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+	const token = wsClient?.getAccessToken();
+	if (!token) {
+		return { success: false, error: "No access token. Wait for WebSocket authentication." };
+	}
 
-		pendingSends.set(requestId, { resolve, timer });
-		wsClient?.send(msg);
-	});
+	const url = `${config!.workerUrl}/api/agents/${config!.username}/send`;
+
+	try {
+		const res = await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(params),
+		});
+
+		const data = (await res.json()) as { success: boolean; messageId?: string; error?: string; requestId?: string };
+		return data;
+	} catch (err) {
+		return { success: false, error: err instanceof Error ? err.message : "REST send failed" };
+	}
 }
 
 // --- Email handling ---
@@ -426,13 +424,8 @@ function startWebSocket(cfg: Config) {
 		onDeliveryNotification(notification) {
 			handleDeliveryNotification(notification);
 		},
-		onSendResult(result) {
-			const pending = pendingSends.get(result.requestId);
-			if (pending) {
-				clearTimeout(pending.timer);
-				pendingSends.delete(result.requestId);
-				pending.resolve(result);
-			}
+		onSendResult(_result) {
+			// Send results now come via REST response, not WS
 		},
 		onDrainStart(count) {
 			console.error(`[agentpost] Receiving ${count} stored message(s)`);
@@ -442,16 +435,6 @@ function startWebSocket(cfg: Config) {
 		},
 		onDisconnect() {
 			authenticated = false;
-			for (const [id, pending] of pendingSends) {
-				clearTimeout(pending.timer);
-				pending.resolve({
-					type: "send_email_result",
-					requestId: id,
-					success: false,
-					error: "WebSocket disconnected",
-				});
-			}
-			pendingSends.clear();
 		},
 	});
 

@@ -10,6 +10,7 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 	let backoff = INITIAL_BACKOFF_MS;
 	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	let closed = false;
+	let accessToken: string | null = null;
 
 	function connect() {
 		if (closed) return;
@@ -34,6 +35,7 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 
 		ws.addEventListener("close", () => {
 			if (closed) return;
+			accessToken = null;
 			events.onDisconnect();
 			scheduleReconnect();
 		});
@@ -56,10 +58,14 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 			}
 			case "auth_result":
 				if (msg.success) {
+					accessToken = msg.accessToken ?? null;
 					events.onAuthenticated();
 				} else {
 					console.error("[agentpost] Auth failed:", msg.error);
 				}
+				break;
+			case "token_refresh":
+				accessToken = msg.accessToken;
 				break;
 			case "encrypted_email":
 				events.onEmail(msg);
@@ -94,8 +100,13 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		}
 	}
 
+	function getAccessToken(): string | null {
+		return accessToken;
+	}
+
 	function close() {
 		closed = true;
+		accessToken = null;
 		if (reconnectTimer) {
 			clearTimeout(reconnectTimer);
 			reconnectTimer = null;
@@ -106,5 +117,5 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		}
 	}
 
-	return { connect, close, send };
+	return { connect, close, send, getAccessToken };
 }
