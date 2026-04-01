@@ -10,23 +10,21 @@ E2E-encrypted email channel. Receive forwarded emails (flight tickets, hotel boo
 claude --dangerously-load-development-channels plugin:agentpost@agentpost-no
 ```
 
-On first start, the plugin generates an X25519 keypair and registers with the backend to get an email address.
+On first start, the plugin generates an X25519 keypair. Use the `register_email` tool to register a username and get an email address.
 
-## Configuration
+## Registration
 
-After installing, configure your preferences:
+After installing, use the `register_email` tool to pick your email address:
 
-```bash
-/agentpost:configure worker_url https://api.agentpost.no
-/agentpost:configure username my-claude
+```
+register_email(username: "my-claude", owner_email: "you@example.com")
 ```
 
-Or set via environment variables:
+This registers `my-claude@agentpost.no` and sends a verification link to the owner email. Click the link, then call `register_email` again to activate.
 
-| Variable | Default | Description |
+| Environment Variable | Default | Description |
 |----------|---------|-------------|
 | `AGENTPOST_WORKER_URL` | `https://api.agentpost.no` | Backend worker URL |
-| `AGENTPOST_USERNAME` | `claude-{timestamp}` | Username for your email address |
 
 ## Tools
 
