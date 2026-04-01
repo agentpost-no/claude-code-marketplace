@@ -28,7 +28,7 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 				) as WorkerToClient;
 				handleMessage(msg);
 			} catch (err) {
-				console.error("[mailmcp] Failed to parse WebSocket message:", err);
+				console.error("[agentpost] Failed to parse WebSocket message:", err);
 			}
 		});
 
@@ -39,7 +39,7 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		});
 
 		ws.addEventListener("error", (err) => {
-			console.error("[mailmcp] WebSocket error:", err);
+			console.error("[agentpost] WebSocket error:", err);
 		});
 	}
 
@@ -58,7 +58,7 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 				if (msg.success) {
 					events.onAuthenticated();
 				} else {
-					console.error("[mailmcp] Auth failed:", msg.error);
+					console.error("[agentpost] Auth failed:", msg.error);
 				}
 				break;
 			case "encrypted_email":

@@ -1,4 +1,4 @@
-# mailmcp - Email Channel for Claude Code
+# Agentpost - Email Channel for Claude Code
 
 E2E-encrypted email channel. Receive forwarded emails (flight tickets, hotel bookings, etc.) and send email from a running Claude Code session. All encryption and decryption happens locally - the server never sees plaintext.
 
@@ -6,8 +6,8 @@ E2E-encrypted email channel. Receive forwarded emails (flight tickets, hotel boo
 
 ```bash
 /plugin marketplace add agentpost-no/claude-code-marketplace
-/plugin install mailmcp@agentpost-no
-claude --dangerously-load-development-channels plugin:mailmcp@agentpost-no
+/plugin install agentpost@agentpost-no
+claude --dangerously-load-development-channels plugin:agentpost@agentpost-no
 ```
 
 On first start, the plugin generates an X25519 keypair and registers with the backend to get an email address.
@@ -17,16 +17,16 @@ On first start, the plugin generates an X25519 keypair and registers with the ba
 After installing, configure your preferences:
 
 ```bash
-/mailmcp:configure worker_url https://mailmcp-worker.on-it.workers.dev
-/mailmcp:configure username my-claude
+/agentpost:configure worker_url https://api.agentpost.no
+/agentpost:configure username my-claude
 ```
 
 Or set via environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MAILMCP_WORKER_URL` | `https://mailmcp-worker.on-it.workers.dev` | Backend worker URL |
-| `MAILMCP_USERNAME` | `claude-{timestamp}` | Username for your email address |
+| `AGENTPOST_WORKER_URL` | `https://api.agentpost.no` | Backend worker URL |
+| `AGENTPOST_USERNAME` | `claude-{timestamp}` | Username for your email address |
 
 ## Tools
 
@@ -53,7 +53,7 @@ Or set via environment variables:
 
 ## Local Storage
 
-All data under `~/.claude/channels/mailmcp/`:
+All data under `~/.claude/channels/agentpost/`:
 
 | Path | Purpose |
 |------|---------|

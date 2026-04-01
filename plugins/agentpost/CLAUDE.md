@@ -32,7 +32,7 @@ Bun, @modelcontextprotocol/sdk, libsodium-wrappers-sumo, postal-mime.
 
 ## Storage
 
-All under `~/.claude/channels/mailmcp/`:
+All under `~/.claude/channels/agentpost/`:
 - `keys/` (0o700): public.key, private.key (0o600), hmac.key (0o600)
 - `config.json`: workerUrl, agentId, email, username
 - `threads.json`: thread contexts + message ID index
@@ -40,5 +40,5 @@ All under `~/.claude/channels/mailmcp/`:
 
 ## Env Vars
 
-- `MAILMCP_WORKER_URL` - defaults to https://mailmcp-worker.on-it.workers.dev
-- `MAILMCP_USERNAME` - defaults to claude-{timestamp}
+- `AGENTPOST_WORKER_URL` - defaults to https://api.agentpost.no
+- `AGENTPOST_USERNAME` - defaults to claude-{timestamp}
