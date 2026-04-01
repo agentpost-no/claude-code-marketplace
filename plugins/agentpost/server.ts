@@ -17,7 +17,6 @@ const publicKeyB64 = toBase64(keys.publicKey);
 let config: Config | null = loadConfig();
 let authenticated = false;
 
-
 // --- Response helpers ---
 function toolError(message: string) {
 	return { content: [{ type: "text" as const, text: message }], isError: true };
@@ -265,7 +264,9 @@ async function handleRegisterEmail(args: { username: string; owner_email: string
 			return toolError(`Username "${username}" is already taken. Try a different one.`);
 		}
 		if (msg.includes("403") || msg.includes("waitlisted") || msg.includes("ventelisten")) {
-			return toolOk("You are not approved yet. You have been added to the waitlist and will be notified when approved.");
+			return toolOk(
+				"You are not approved yet. You have been added to the waitlist and will be notified when approved.",
+			);
 		}
 		return toolError(`Registration failed: ${msg}`);
 	}
@@ -304,7 +305,7 @@ async function sendViaRest(params: {
 		return { success: false, error: "No access token. Wait for WebSocket authentication." };
 	}
 
-	const url = `${config!.workerUrl}/api/agents/${config!.username}/send`;
+	const url = `${config?.workerUrl}/api/agents/${config?.username}/send`;
 
 	try {
 		const res = await fetch(url, {

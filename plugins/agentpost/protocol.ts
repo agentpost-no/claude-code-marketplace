@@ -3,6 +3,11 @@
  * Copy this file to both worker/src/ and client/ when updating.
  */
 
+/** Bump when making breaking protocol changes. */
+export const PROTOCOL_VERSION = 2;
+/** Minimum version the server accepts. */
+export const MIN_PROTOCOL_VERSION = 2;
+
 // --- Authentication ---
 
 export interface AuthChallenge {

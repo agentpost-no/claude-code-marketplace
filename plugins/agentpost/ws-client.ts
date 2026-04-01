@@ -1,5 +1,6 @@
 import { fromBase64, sealedBoxDecrypt, toBase64 } from "./crypto.js";
 import type { ClientToWorker, WorkerToClient } from "./protocol.js";
+import { PROTOCOL_VERSION } from "./protocol.js";
 import type { KeyPair, WsClient, WsClientEvents } from "./types.js";
 
 const INITIAL_BACKOFF_MS = 1000;
@@ -15,7 +16,7 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 	function connect() {
 		if (closed) return;
 
-		const wsUrl = `${url.replace(/^http/, "ws")}/agents/mail-agent/${agentId}`;
+		const wsUrl = `${url.replace(/^http/, "ws")}/agents/mail-agent/${agentId}?v=${PROTOCOL_VERSION}`;
 		ws = new WebSocket(wsUrl);
 
 		ws.addEventListener("open", () => {
