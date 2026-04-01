@@ -97,7 +97,7 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
 					},
 					attachments: {
 						type: "array",
-						description: "File attachments. Each item has name, content (base64), and contentType.",
+						description: "File attachments as base64. Each item: { name, content (base64), contentType }.",
 						items: {
 							type: "object",
 							properties: {
@@ -107,6 +107,11 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
 							},
 							required: ["name", "content", "contentType"],
 						},
+					},
+					file_paths: {
+						type: "array",
+						description: "Local file paths to attach. Files are read and base64-encoded automatically.",
+						items: { type: "string" },
 					},
 				},
 				required: ["to", "subject", "body"],
@@ -148,7 +153,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 
 	switch (name) {
 		case "send_email": {
-			const { to, subject, body, html_body, on_behalf_of, footer_language, attachments } = args as {
+			const { to, subject, body, html_body, on_behalf_of, footer_language, attachments, file_paths } = args as {
 				to: string;
 				subject: string;
 				body: string;
@@ -156,7 +161,52 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				on_behalf_of?: string;
 				footer_language?: "no" | "en";
 				attachments?: Array<{ name: string; content: string; contentType: string }>;
+				file_paths?: string[];
 			};
+
+			// Build file list from base64 attachments and local file paths
+			const files: Array<{ name: string; data: Buffer; contentType: string }> = [];
+
+			if (attachments?.length) {
+				for (const a of attachments) {
+					files.push({ name: a.name, data: Buffer.from(a.content, "base64"), contentType: a.contentType });
+				}
+			}
+
+			if (file_paths?.length) {
+				const { readFile } = await import("node:fs/promises");
+				const { basename } = await import("node:path");
+				const mimeMap: Record<string, string> = {
+					pdf: "application/pdf",
+					png: "image/png",
+					jpg: "image/jpeg",
+					jpeg: "image/jpeg",
+					gif: "image/gif",
+					csv: "text/csv",
+					txt: "text/plain",
+					json: "application/json",
+					html: "text/html",
+					xml: "application/xml",
+					zip: "application/zip",
+					doc: "application/msword",
+					docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+					xls: "application/vnd.ms-excel",
+					xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+				};
+				for (const filePath of file_paths) {
+					try {
+						const buf = await readFile(filePath);
+						const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+						files.push({
+							name: basename(filePath),
+							data: buf,
+							contentType: mimeMap[ext] ?? "application/octet-stream",
+						});
+					} catch (err) {
+						return toolError(`Failed to read file ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
+					}
+				}
+			}
 			const nonce = crypto.randomUUID();
 			const timestamp = new Date().toISOString();
 
@@ -183,7 +233,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				html_body,
 				custom_headers: customHeaders,
 				footer_language,
-				attachments,
+				files: files.length > 0 ? files : undefined,
 			});
 
 			if (result.success) {
@@ -307,15 +357,18 @@ async function pollForActivation(cfg: Config) {
 }
 
 // --- Send via REST API ---
-async function sendViaRest(params: {
+
+interface SendParams {
 	to: string;
 	subject: string;
 	body: string;
 	html_body?: string;
 	custom_headers?: Record<string, string>;
 	footer_language?: "no" | "en";
-	attachments?: Array<{ name: string; content: string; contentType: string }>;
-}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+	files?: Array<{ name: string; data: Buffer; contentType: string }>;
+}
+
+async function sendViaRest(params: SendParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
 	const token = wsClient?.getAccessToken();
 	if (!token) {
 		return { success: false, error: "No access token. Wait for WebSocket authentication." };
@@ -324,16 +377,40 @@ async function sendViaRest(params: {
 	const url = `${config?.workerUrl}/api/agents/${config?.username}/send`;
 
 	try {
-		const res = await fetch(url, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
-			},
-			body: JSON.stringify(params),
-		});
+		let res: Response;
 
-		const data = (await res.json()) as { success: boolean; messageId?: string; error?: string; requestId?: string };
+		if (params.files?.length) {
+			// Multipart for attachments
+			const form = new FormData();
+			form.append("to", params.to);
+			form.append("subject", params.subject);
+			form.append("body", params.body);
+			if (params.html_body) form.append("html_body", params.html_body);
+			if (params.footer_language) form.append("footer_language", params.footer_language);
+			if (params.custom_headers) form.append("custom_headers", JSON.stringify(params.custom_headers));
+
+			for (const file of params.files) {
+				form.append("attachments", new Blob([file.data], { type: file.contentType }), file.name);
+			}
+
+			res = await fetch(url, {
+				method: "POST",
+				headers: { Authorization: `Bearer ${token}` },
+				body: form,
+			});
+		} else {
+			// JSON for simple sends
+			res = await fetch(url, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify(params),
+			});
+		}
+
+		const data = (await res.json()) as { success: boolean; messageId?: string; error?: string };
 		return data;
 	} catch (err) {
 		return { success: false, error: err instanceof Error ? err.message : "REST send failed" };
