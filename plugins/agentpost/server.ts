@@ -95,6 +95,19 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
 						enum: ["no", "en"],
 						description: "Language for the email footer. 'no' for Norwegian, 'en' for English. Defaults to 'en'.",
 					},
+					attachments: {
+						type: "array",
+						description: "File attachments. Each item has name, content (base64), and contentType.",
+						items: {
+							type: "object",
+							properties: {
+								name: { type: "string", description: "Filename (e.g. 'report.pdf')" },
+								content: { type: "string", description: "File content as base64" },
+								contentType: { type: "string", description: "MIME type (e.g. 'application/pdf')" },
+							},
+							required: ["name", "content", "contentType"],
+						},
+					},
 				},
 				required: ["to", "subject", "body"],
 			},
@@ -135,13 +148,14 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 
 	switch (name) {
 		case "send_email": {
-			const { to, subject, body, html_body, on_behalf_of, footer_language } = args as {
+			const { to, subject, body, html_body, on_behalf_of, footer_language, attachments } = args as {
 				to: string;
 				subject: string;
 				body: string;
 				html_body?: string;
 				on_behalf_of?: string;
 				footer_language?: "no" | "en";
+				attachments?: Array<{ name: string; content: string; contentType: string }>;
 			};
 			const nonce = crypto.randomUUID();
 			const timestamp = new Date().toISOString();
@@ -169,6 +183,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				html_body,
 				custom_headers: customHeaders,
 				footer_language,
+				attachments,
 			});
 
 			if (result.success) {
@@ -299,6 +314,7 @@ async function sendViaRest(params: {
 	html_body?: string;
 	custom_headers?: Record<string, string>;
 	footer_language?: "no" | "en";
+	attachments?: Array<{ name: string; content: string; contentType: string }>;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
 	const token = wsClient?.getAccessToken();
 	if (!token) {
