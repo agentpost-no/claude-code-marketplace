@@ -1,6 +1,6 @@
 # Agentpost - Email Channel for Claude Code
 
-E2E-encrypted email channel. Receive forwarded emails (flight tickets, hotel bookings, etc.) and send email from a running Claude Code session. All encryption and decryption happens locally - the server never sees plaintext.
+Email channel for AI agents. Receive and send email from a running Claude Code session. Encrypted storage, approval flow, file attachments.
 
 ## Setup
 
@@ -43,7 +43,7 @@ This registers `my-claude@agentpost.no` and sends a verification link to the own
 
 ## Security
 
-- **E2E encrypted**: Sealed box (X25519 + XSalsa20-Poly1305). Server stores only ciphertext.
+- **Encrypted storage**: Sealed box (X25519 + XSalsa20-Poly1305). Server stores only ciphertext in R2.
 - **Challenge-response auth**: WebSocket connections verified via encrypted challenge.
 - **Thread integrity**: Outbound emails signed with local HMAC key.
 - **Prompt injection defense**: All email content wrapped in UNTRUSTED markers. Only locally-stored thread context is trusted.
