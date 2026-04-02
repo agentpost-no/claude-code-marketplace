@@ -1,6 +1,6 @@
-# client
+# client (agentpost plugin)
 
-MCP channel client for Claude Code. Runs locally as a subprocess over stdio.
+Claude Code plugin for agentpost.no. Runs locally as MCP server over stdio.
 
 ## Stack
 
@@ -8,37 +8,37 @@ Bun, @modelcontextprotocol/sdk, libsodium-wrappers-sumo, postal-mime.
 
 ## Files
 
-- `server.ts` - Entry point. MCP server with claude/channel capability. Tools: send_email, reply_to_email. Startup: keygen, register, connect WS, stdio.
-- `crypto.ts` - Key management (X25519 keypair, HMAC key). Sealed box decryption. Base64 helpers (toBase64/fromBase64).
-- `ws-client.ts` - WebSocket client. Auth challenge-response, exponential backoff with jitter (1s-30s), message dispatch.
-- `thread.ts` - HMAC thread signing. In-memory cache backed by threads.json. Lookup by message ID or thread ID only. getAllMessageIds returns outbound-only IDs for thread claim.
-- `email-parser.ts` - MIME parsing via postal-mime. UNTRUSTED EXTERNAL CONTENT formatting. Attachment saving with filename sanitization.
+- `server.ts` - MCP server. Tools: register_email, send_email (with file_paths), reply_to_email.
+- `crypto.ts` - Key management (X25519 keypair, HMAC). Sealed box decryption. Base64 helpers.
+- `ws-client.ts` - WebSocket client. Auth challenge-response, access token management, exponential backoff.
+- `thread.ts` - HMAC thread signing. In-memory cache backed by threads.json.
+- `email-parser.ts` - MIME parsing. UNTRUSTED EXTERNAL CONTENT formatting. Attachment saving.
 - `store.ts` - Config load/save. Worker registration via HTTP.
-- `paths.ts` - All storage paths: KEYS_DIR, ATTACHMENTS_DIR, CONFIG_PATH, THREADS_PATH.
+- `paths.ts` - All storage paths under ~/.claude/channels/agentpost/.
 - `file-store.ts` - Generic JSON file load/save with safe permissions.
-- `types.ts` - KeyPair, Config, ParsedEmail, ThreadContext, WsClient, etc.
-- `protocol.ts` - Wire protocol types. Keep in sync with shared/protocol.ts.
+- `types.ts` - KeyPair, Config, WsClient (with getAccessToken), etc.
+- `protocol.ts` - Wire protocol (keep in sync with worker/src/protocol.ts).
 
-## Conventions
+## Auth Flow
 
-- Base64: always use `toBase64`/`fromBase64` from crypto.ts. Never call sodium.to_base64 directly.
-- Paths: import from paths.ts. Never construct base path inline.
-- JSON files: use loadJsonFile/saveJsonFile from file-store.ts.
-- Tool responses: use toolError/toolOk helpers in server.ts.
-- All email content is UNTRUSTED. From, subject, body, filenames - all inside UNTRUSTED block.
-- Thread context from local store only. Subject-line fallback removed.
-- ThreadContext.outbound flag: true for sent emails, false/omitted for inbound. Only outbound IDs claimed on reconnect.
-- Startup polls /api/status/:agent when config is pending, auto-activates if owner verified.
+1. WS connect with `?v=PROTOCOL_VERSION`
+2. Server sends encrypted challenge (sealed box with client public key)
+3. Client decrypts and responds
+4. Server verifies, returns access token (HMAC, 15 min) in auth_result
+5. Client uses Bearer token for REST send calls
+6. Server pushes token_refresh via WS before expiry
+
+## Sending
+
+- REST POST to `/api/agents/:name/send` with Bearer token
+- JSON for text-only, multipart FormData for file attachments
+- `file_paths` parameter: reads local files, auto-detects MIME type
+- `attachments` parameter: base64 blobs for programmatic content
 
 ## Storage
 
 All under `~/.claude/channels/agentpost/`:
-- `keys/` (0o700): public.key, private.key (0o600), hmac.key (0o600)
-- `config.json`: workerUrl, agentId, email, username
+- `keys/` (0o700): public.key, private.key, hmac.key (0o600)
+- `config.json`: workerUrl, agentId, email, username, status
 - `threads.json`: thread contexts + message ID index
-- `attachments/{date}/`: saved attachments
-
-## Env Vars
-
-- `AGENTPOST_WORKER_URL` - defaults to https://api.agentpost.no
-- `AGENTPOST_USERNAME` - defaults to claude-{timestamp}
+- `attachments/{date}/`: saved inbound attachments
