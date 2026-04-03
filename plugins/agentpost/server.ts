@@ -164,14 +164,8 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				file_paths?: string[];
 			};
 
-			// Build file list from base64 attachments and local file paths
-			const files: Array<{ name: string; data: Buffer; contentType: string }> = [];
-
-			if (attachments?.length) {
-				for (const a of attachments) {
-					files.push({ name: a.name, data: Buffer.from(a.content, "base64"), contentType: a.contentType });
-				}
-			}
+			// Build attachment list as base64
+			const allAttachments: Array<{ name: string; content: string; contentType: string }> = [...(attachments ?? [])];
 
 			if (file_paths?.length) {
 				const { readFile } = await import("node:fs/promises");
@@ -197,9 +191,9 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 					try {
 						const buf = await readFile(filePath);
 						const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
-						files.push({
+						allAttachments.push({
 							name: basename(filePath),
-							data: buf,
+							content: buf.toString("base64"),
 							contentType: mimeMap[ext] ?? "application/octet-stream",
 						});
 					} catch (err) {
@@ -233,7 +227,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				html_body,
 				custom_headers: customHeaders,
 				footer_language,
-				files: files.length > 0 ? files : undefined,
+				attachments: allAttachments.length > 0 ? allAttachments : undefined,
 			});
 
 			if (result.success) {
@@ -365,7 +359,7 @@ interface SendParams {
 	html_body?: string;
 	custom_headers?: Record<string, string>;
 	footer_language?: "no" | "en";
-	files?: Array<{ name: string; data: Buffer; contentType: string }>;
+	attachments?: Array<{ name: string; content: string; contentType: string }>;
 }
 
 async function sendViaRest(params: SendParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
@@ -377,38 +371,14 @@ async function sendViaRest(params: SendParams): Promise<{ success: boolean; mess
 	const url = `${config?.workerUrl}/api/agents/${config?.username}/send`;
 
 	try {
-		let res: Response;
-
-		if (params.files?.length) {
-			// Multipart for attachments
-			const form = new FormData();
-			form.append("to", params.to);
-			form.append("subject", params.subject);
-			form.append("body", params.body);
-			if (params.html_body) form.append("html_body", params.html_body);
-			if (params.footer_language) form.append("footer_language", params.footer_language);
-			if (params.custom_headers) form.append("custom_headers", JSON.stringify(params.custom_headers));
-
-			for (const file of params.files) {
-				form.append("attachments", new Blob([file.data], { type: file.contentType }), file.name);
-			}
-
-			res = await fetch(url, {
-				method: "POST",
-				headers: { Authorization: `Bearer ${token}` },
-				body: form,
-			});
-		} else {
-			// JSON for simple sends
-			res = await fetch(url, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify(params),
-			});
-		}
+		const res = await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(params),
+		});
 
 		const data = (await res.json()) as { success: boolean; messageId?: string; error?: string };
 		return data;
