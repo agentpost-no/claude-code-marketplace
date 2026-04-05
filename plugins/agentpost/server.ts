@@ -118,6 +118,14 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
 			},
 		},
 		{
+			name: "check_inbox",
+			description: "Check for unread emails. Use this if you might have missed a notification.",
+			inputSchema: {
+				type: "object" as const,
+				properties: {},
+			},
+		},
+		{
 			name: "reply_to_email",
 			description: "Reply to an existing email thread. Supports full UTF-8 (including æ, ø, å).",
 			inputSchema: {
@@ -152,6 +160,46 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 	}
 
 	switch (name) {
+		case "check_inbox": {
+			const token = wsClient?.getAccessToken();
+			if (!token) return toolError("No access token. Wait for WebSocket authentication.");
+
+			try {
+				const url = `${config.workerUrl}/api/agents/${config.username}/inbox`;
+				const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+				const data = (await res.json()) as {
+					emails: Array<{
+						id: string;
+						from: string;
+						to: string;
+						receivedAt: string;
+						encryptedContent: string;
+						emailMessageId?: string;
+						inReplyTo?: string;
+					}>;
+					count: number;
+				};
+
+				if (data.count === 0) return toolOk("No unread emails.");
+
+				// Decrypt and process each email
+				for (const encrypted of data.emails) {
+					await handleIncomingEmail({
+						type: "encrypted_email",
+						...encrypted,
+						size: encrypted.encryptedContent.length,
+						isVerifiedReply: false,
+					});
+					// ACK each email
+					wsClient?.send({ type: "email_ack", id: encrypted.id });
+				}
+
+				return toolOk(`Found ${data.count} unread email${data.count > 1 ? "s" : ""}. Check notifications above.`);
+			} catch (err) {
+				return toolError(`Inbox check failed: ${err instanceof Error ? err.message : String(err)}`);
+			}
+		}
+
 		case "send_email": {
 			const { to, subject, body, html_body, on_behalf_of, footer_language, attachments, file_paths } = args as {
 				to: string;
