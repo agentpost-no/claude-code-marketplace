@@ -74,7 +74,7 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
 		{
 			name: "send_email",
 			description:
-				"Send a new email. Supports full UTF-8 (including æ, ø, å). Use on_behalf_of when sending on behalf of the user.",
+				"Send a new email. May require owner approval - if so the email is queued (not sent) and you will receive a notification when approved or rejected. Do not tell the user to check their inbox until approval is confirmed. Supports full UTF-8 (including æ, ø, å). Use on_behalf_of when sending on behalf of the user.",
 			inputSchema: {
 				type: "object" as const,
 				properties: {
@@ -282,7 +282,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				storeThreadContext(threadId, { to, subject, body, timestamp, messageId: result.messageId, outbound: true });
 				if (result.status === "awaiting_approval") {
 					return toolOk(
-						`Email to ${to} requires owner approval before sending. You will be notified when it is approved or rejected. Thread ID: ${threadId}`,
+						`Email to ${to} is queued and awaiting owner approval. The email has NOT been sent yet. Do NOT tell the user to check their inbox. You will receive an automatic notification when the owner approves or rejects it. Thread ID: ${threadId}`,
 					);
 				}
 				return toolOk(`Email sent to ${to}. Thread ID: ${threadId}`);
@@ -321,7 +321,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				});
 				if (result.status === "awaiting_approval") {
 					return toolOk(
-						`Reply to ${thread.to} requires owner approval before sending. You will be notified when it is approved or rejected. Thread ID: ${thread_id}`,
+						`Reply to ${thread.to} is queued and awaiting owner approval. The reply has NOT been sent yet. Do NOT tell the user to check their inbox. You will receive an automatic notification when the owner approves or rejects it. Thread ID: ${thread_id}`,
 					);
 				}
 				return toolOk(`Reply sent to ${thread.to} in thread ${thread_id}`);
