@@ -10,7 +10,7 @@
     {
       "name": "agentpost",
       "description": "E2E-encrypted email channel for Claude Code. Receive and send email with zero plaintext on the server.",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "category": "productivity",
       "author": {
         "name": "Ole Melhus",
