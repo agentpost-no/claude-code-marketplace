@@ -79,6 +79,10 @@ export interface SendEmailResult {
 	/** Echoed request ID */
 	requestId: string;
 	success: boolean;
+	/** Recipient address */
+	to: string;
+	/** Email subject */
+	subject: string;
 	/** Message-ID header assigned by the mail system */
 	messageId?: string;
 	error?: string;

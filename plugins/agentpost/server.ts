@@ -28,7 +28,7 @@ function toolOk(message: string) {
 
 // --- MCP Server ---
 const mcp = new Server(
-	{ name: "agentpost", version: "0.0.1" },
+	{ name: "agentpost", version: "0.0.2" },
 	{
 		capabilities: {
 			tools: {},
@@ -280,6 +280,11 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 
 			if (result.success) {
 				storeThreadContext(threadId, { to, subject, body, timestamp, messageId: result.messageId, outbound: true });
+				if (result.status === "awaiting_approval") {
+					return toolOk(
+						`Email to ${to} requires owner approval before sending. You will be notified when it is approved or rejected. Thread ID: ${threadId}`,
+					);
+				}
 				return toolOk(`Email sent to ${to}. Thread ID: ${threadId}`);
 			}
 			return toolError(`Failed to send email: ${result.error}`);
@@ -314,6 +319,11 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 					messageId: result.messageId,
 					outbound: true,
 				});
+				if (result.status === "awaiting_approval") {
+					return toolOk(
+						`Reply to ${thread.to} requires owner approval before sending. You will be notified when it is approved or rejected. Thread ID: ${thread_id}`,
+					);
+				}
 				return toolOk(`Reply sent to ${thread.to} in thread ${thread_id}`);
 			}
 			return toolError(`Failed to send reply: ${result.error}`);
@@ -410,7 +420,9 @@ interface SendParams {
 	attachments?: Array<{ name: string; content: string; contentType: string }>;
 }
 
-async function sendViaRest(params: SendParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
+async function sendViaRest(
+	params: SendParams,
+): Promise<{ success: boolean; messageId?: string; error?: string; status?: string; requestId?: string }> {
 	const token = wsClient?.getAccessToken();
 	if (!token) {
 		return { success: false, error: "No access token. Wait for WebSocket authentication." };
@@ -428,7 +440,13 @@ async function sendViaRest(params: SendParams): Promise<{ success: boolean; mess
 			body: JSON.stringify(params),
 		});
 
-		const data = (await res.json()) as { success: boolean; messageId?: string; error?: string };
+		const data = (await res.json()) as {
+			success: boolean;
+			messageId?: string;
+			error?: string;
+			status?: string;
+			requestId?: string;
+		};
 		return data;
 	} catch (err) {
 		return { success: false, error: err instanceof Error ? err.message : "REST send failed" };
@@ -516,6 +534,32 @@ async function handleDeliveryNotification(notification: DeliveryNotification) {
 	});
 }
 
+// --- Approval result handling ---
+async function handleSendResult(result: import("./protocol.js").SendEmailResult) {
+	let content: string;
+	let event: string;
+
+	if (result.success) {
+		event = "approved";
+		content = `[Email Approved] Your email to ${result.to} (subject: "${result.subject}") has been approved and sent by the owner.`;
+	} else {
+		event = "rejected";
+		content = `[Email Rejected] Your email to ${result.to} (subject: "${result.subject}") was rejected by the owner: ${result.error ?? "No reason given"}.`;
+	}
+
+	await mcp.notification({
+		method: "notifications/claude/channel",
+		params: {
+			meta: {
+				source: "email",
+				event,
+				recipient: result.to,
+			},
+			content,
+		},
+	});
+}
+
 // --- WebSocket ---
 let wsClient: ReturnType<typeof createWsClient> | null = null;
 
@@ -536,8 +580,8 @@ function startWebSocket(cfg: Config) {
 		onDeliveryNotification(notification) {
 			handleDeliveryNotification(notification);
 		},
-		onSendResult(_result) {
-			// Send results now come via REST response, not WS
+		onSendResult(result) {
+			handleSendResult(result);
 		},
 		onDrainStart(count) {
 			console.error(`[agentpost] Receiving ${count} stored message(s)`);
