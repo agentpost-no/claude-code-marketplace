@@ -86,6 +86,8 @@ export interface SendEmailResult {
 	/** Message-ID header assigned by the mail system */
 	messageId?: string;
 	error?: string;
+	/** True when recipient was added to trusted contacts (approve_always) */
+	contactTrusted?: boolean;
 }
 
 // --- Store and Forward ---

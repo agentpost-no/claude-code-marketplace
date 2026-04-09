@@ -28,7 +28,7 @@ function toolOk(message: string) {
 
 // --- MCP Server ---
 const mcp = new Server(
-	{ name: "agentpost", version: "0.0.3" },
+	{ name: "agentpost", version: "0.0.4" },
 	{
 		capabilities: {
 			tools: {},
@@ -542,6 +542,9 @@ async function handleSendResult(result: import("./protocol.js").SendEmailResult)
 	if (result.success) {
 		event = "approved";
 		content = `[Email Approved] Your email to ${result.to} (subject: "${result.subject}") has been approved and sent by the owner.`;
+		if (result.contactTrusted) {
+			content += ` The owner has marked ${result.to} as a trusted contact - future emails to this address will be sent immediately without approval.`;
+		}
 	} else {
 		event = "rejected";
 		content = `[Email Rejected] Your email to ${result.to} (subject: "${result.subject}") was rejected by the owner: ${result.error ?? "No reason given"}.`;
