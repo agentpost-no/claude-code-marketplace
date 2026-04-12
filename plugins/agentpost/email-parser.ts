@@ -1,8 +1,48 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import PostalMime from "postal-mime";
+import TurndownService from "turndown";
 import { ATTACHMENTS_DIR } from "./paths.js";
-import type { AttachmentInfo, ParsedAttachment, ParsedEmail, ThreadContext } from "./types.js";
+import type { AttachmentInfo, EmailLink, ParsedAttachment, ParsedEmail, ThreadContext } from "./types.js";
+
+const turndown = new TurndownService({
+	headingStyle: "atx",
+	codeBlockStyle: "fenced",
+	bulletListMarker: "-",
+	linkStyle: "inlined",
+});
+turndown.remove(["style", "script", "head", "meta", "title"]);
+
+function htmlToMarkdown(html: string): string {
+	try {
+		return turndown.turndown(html).replace(/\n{3,}/g, "\n\n").trim();
+	} catch {
+		return html.replace(/<[^>]*>/g, "");
+	}
+}
+
+function extractLinks(html: string): EmailLink[] {
+	const out: EmailLink[] = [];
+	const seen = new Set<string>();
+	const re = /<a\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+	let m: RegExpExecArray | null = re.exec(html);
+	while (m !== null) {
+		const href = m[1].trim();
+		if (/^https?:/i.test(href)) {
+			const text = m[2]
+				.replace(/<[^>]*>/g, "")
+				.replace(/\s+/g, " ")
+				.trim();
+			const key = `${text}|${href}`;
+			if (!seen.has(key)) {
+				seen.add(key);
+				out.push({ text: text || href, href });
+			}
+		}
+		m = re.exec(html);
+	}
+	return out;
+}
 
 function normalizeAttachmentContent(content: unknown): Uint8Array {
 	if (content instanceof ArrayBuffer) return new Uint8Array(content);
@@ -34,6 +74,12 @@ export async function parseEmail(rawMime: Uint8Array): Promise<ParsedEmail> {
 		};
 	});
 
+	const html = parsed.html ?? undefined;
+	const links = html ? extractLinks(html) : [];
+	// Prefer markdown-converted HTML over the plain-text part so URLs for
+	// confirmation/RSVP/unsubscribe buttons are visible to the agent.
+	const textBody = html ? htmlToMarkdown(html) : (parsed.text ?? "");
+
 	return {
 		from: parsed.from?.address ?? parsed.from?.name ?? "unknown",
 		to: (parsed.to ?? []).map((t) => t.address).join(", "),
@@ -42,8 +88,9 @@ export async function parseEmail(rawMime: Uint8Array): Promise<ParsedEmail> {
 		messageId: parsed.messageId ?? "",
 		inReplyTo: parsed.inReplyTo ?? undefined,
 		references: parsed.references ?? undefined,
-		textBody: parsed.text || parsed.html?.replace(/<[^>]*>/g, "") || "",
-		htmlBody: parsed.html ?? undefined,
+		textBody,
+		htmlBody: html,
+		links,
 		attachments,
 	};
 }
@@ -86,6 +133,14 @@ export function formatEmailContent(email: ParsedEmail, threadContext?: ThreadCon
 		parts.push("Attachments:");
 		for (const a of email.attachments) {
 			parts.push(`  - ${escapeUntrusted(a.filename)} (${escapeUntrusted(a.mimeType)}, ${a.size} bytes)`);
+		}
+		parts.push("");
+	}
+
+	if (email.links.length > 0) {
+		parts.push("Links:");
+		for (const l of email.links) {
+			parts.push(`  - ${escapeUntrusted(l.text)} -> ${escapeUntrusted(l.href)}`);
 		}
 		parts.push("");
 	}

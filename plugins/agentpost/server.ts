@@ -471,6 +471,7 @@ async function handleIncomingEmail(encrypted: EncryptedEmail) {
 			to: email.from, // reply goes back to sender
 			subject: email.subject,
 			body: email.textBody,
+			links: email.links.length > 0 ? email.links : undefined,
 			timestamp: encrypted.receivedAt,
 			messageId: encrypted.emailMessageId,
 		});
