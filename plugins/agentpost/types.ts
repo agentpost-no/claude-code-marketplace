@@ -20,9 +20,17 @@ export interface ParsedEmail {
 	messageId: string;
 	inReplyTo?: string;
 	references?: string;
+	/** Primary body. If the email has an HTML part, this is the markdown conversion so link URLs are preserved. */
 	textBody: string;
 	htmlBody?: string;
+	/** Extracted hyperlinks from the HTML body, in document order. */
+	links: EmailLink[];
 	attachments: ParsedAttachment[];
+}
+
+export interface EmailLink {
+	text: string;
+	href: string;
 }
 
 export interface ParsedAttachment {
@@ -44,6 +52,8 @@ export interface ThreadContext {
 	to: string;
 	subject: string;
 	body: string;
+	/** Extracted hyperlinks from the inbound HTML body. Empty for outbound or text-only mail. */
+	links?: EmailLink[];
 	timestamp: string;
 	messageId?: string;
 	/** true for emails we sent, false/undefined for inbound */
