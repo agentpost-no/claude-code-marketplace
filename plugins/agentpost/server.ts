@@ -470,7 +470,7 @@ async function handleIncomingEmail(encrypted: EncryptedEmail) {
 		storeThreadContext(inboundThreadId, {
 			to: email.from, // reply goes back to sender
 			subject: email.subject,
-			body: email.textBody.slice(0, 200),
+			body: email.textBody,
 			timestamp: encrypted.receivedAt,
 			messageId: encrypted.emailMessageId,
 		});
