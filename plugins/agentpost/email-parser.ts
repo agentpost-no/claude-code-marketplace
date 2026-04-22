@@ -176,12 +176,12 @@ export function saveAttachments(attachments: ParsedAttachment[], date: string): 
 
 	const dateStr = date.slice(0, 10);
 	const dir = join(ATTACHMENTS_DIR, dateStr);
-	mkdirSync(dir, { recursive: true });
+	mkdirSync(dir, { recursive: true, mode: 0o700 });
 
 	return attachments.map((a) => {
 		const filename = sanitizeFilename(a.filename);
 		const savePath = uniquePath(dir, filename);
-		writeFileSync(savePath, a.content);
+		writeFileSync(savePath, a.content, { mode: 0o600 });
 		return {
 			filename: a.filename,
 			savedPath: savePath,

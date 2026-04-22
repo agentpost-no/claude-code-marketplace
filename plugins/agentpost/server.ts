@@ -391,7 +391,7 @@ async function handleRegisterEmail(args: { username: string; owner_email: string
 
 async function pollForActivation(cfg: Config) {
 	try {
-		const res = await fetch(`${cfg.workerUrl}/api/status/${cfg.agentId}`);
+		const res = await fetch(`${cfg.workerUrl}/api/status/${cfg.agentId}?pk=${encodeURIComponent(publicKeyB64)}`);
 		if (!res.ok) return toolError("Failed to check status");
 		const data = (await res.json()) as { status: string };
 
@@ -619,7 +619,7 @@ async function main() {
 	} else if (config && config.status === "pending") {
 		// Check if owner has verified since last run
 		try {
-			const res = await fetch(`${config.workerUrl}/api/status/${config.agentId}`);
+			const res = await fetch(`${config.workerUrl}/api/status/${config.agentId}?pk=${encodeURIComponent(publicKeyB64)}`);
 			const data = (await res.json()) as { status: string };
 			if (data.status === "active") {
 				config.status = "active";
