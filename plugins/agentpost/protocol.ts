@@ -3,10 +3,12 @@
  * Copy this file to both worker/src/ and client/ when updating.
  */
 
-/** Bump when making breaking protocol changes. */
-export const PROTOCOL_VERSION = 2;
+/** Bump when making breaking protocol changes. v3 added app-level ping/pong keepalive. */
+export const PROTOCOL_VERSION = 3;
 /** Minimum version the server accepts. */
 export const MIN_PROTOCOL_VERSION = 2;
+/** Clients at or above this version keep the connection alive with their own ping/pong. */
+export const APP_PING_MIN_VERSION = 3;
 
 /**
  * WebSocket close codes (application range 4000-4999).
@@ -62,6 +64,21 @@ export interface TokenRefresh {
 	accessToken: string;
 	/** Token expiry in seconds */
 	expiresIn: number;
+}
+
+// --- Keepalive ---
+
+/**
+ * Liveness ping. Client -> server: app-level probe (server auto-responds with pong
+ * without waking the Durable Object). Server -> client: keepalive nudge for legacy
+ * clients (< v3) whose own ping is a no-op, so any message resets their pong timer.
+ */
+export interface Ping {
+	type: "ping";
+}
+
+export interface Pong {
+	type: "pong";
 }
 
 // --- Email Messages ---
@@ -177,6 +194,8 @@ export type WorkerToClient =
 	| StoreDrain
 	| StoreDrainComplete
 	| SendEmailResult
-	| DeliveryNotification;
+	| DeliveryNotification
+	| Ping
+	| Pong;
 
-export type ClientToWorker = AuthResponse | EmailAck | ClaimThreads;
+export type ClientToWorker = AuthResponse | EmailAck | ClaimThreads | Ping;

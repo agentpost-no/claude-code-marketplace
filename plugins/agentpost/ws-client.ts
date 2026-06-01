@@ -174,6 +174,10 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 			case "store_drain_complete":
 				events.onDrainComplete();
 				break;
+			case "ping":
+			case "pong":
+				// Liveness only - the message listener already cleared the pong timer.
+				break;
 		}
 	}
 
@@ -192,13 +196,10 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 				return;
 			}
 			awaitingPong = true;
-			// Send a ping frame. If the server doesn't support ping/pong,
-			// any server message within the timeout window also clears awaitingPong.
-			try {
-				ws.ping?.();
-			} catch {
-				// ping() not available in all runtimes, rely on message-based detection
-			}
+			// Send an app-level ping message; the server auto-responds with a pong.
+			// (A raw ws.ping() frame is a no-op here - WHATWG/Bun WebSocket has no such
+			// method - which is why idle connections used to die after the pong timeout.)
+			send({ type: "ping" });
 			pongTimer = setTimeout(() => {
 				if (awaitingPong) {
 					console.error("[agentpost] Pong timeout, reconnecting");

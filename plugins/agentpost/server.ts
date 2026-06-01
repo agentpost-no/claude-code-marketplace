@@ -28,7 +28,7 @@ function toolOk(message: string) {
 
 // --- MCP Server ---
 const mcp = new Server(
-	{ name: "agentpost", version: "0.0.7" },
+	{ name: "agentpost", version: "0.0.8" },
 	{
 		capabilities: {
 			tools: {},
