@@ -8,6 +8,28 @@ export const PROTOCOL_VERSION = 2;
 /** Minimum version the server accepts. */
 export const MIN_PROTOCOL_VERSION = 2;
 
+/**
+ * WebSocket close codes (application range 4000-4999).
+ * The client uses these to decide whether to reconnect.
+ */
+export const WS_CLOSE = {
+	/** Plugin too old. Terminal: client must update and restart. */
+	PROTOCOL_TOO_OLD: 4010,
+	/** Agent not registered/active. Terminal: client must re-register. */
+	NOT_REGISTERED: 4001,
+	/** Awaiting email verification. Transient: client retries slowly. */
+	PENDING_VERIFICATION: 4002,
+	/** Auth (challenge-response) failed. Terminal: keys are wrong. */
+	AUTH_FAILED: 4003,
+} as const;
+
+/** Close codes after which the client must NOT auto-reconnect (no fix without a restart). */
+export const TERMINAL_WS_CLOSE_CODES: readonly number[] = [
+	WS_CLOSE.PROTOCOL_TOO_OLD,
+	WS_CLOSE.NOT_REGISTERED,
+	WS_CLOSE.AUTH_FAILED,
+];
+
 // --- Authentication ---
 
 export interface AuthChallenge {

@@ -1,6 +1,6 @@
 import { fromBase64, sealedBoxDecrypt, toBase64 } from "./crypto.js";
 import type { ClientToWorker, WorkerToClient } from "./protocol.js";
-import { PROTOCOL_VERSION } from "./protocol.js";
+import { PROTOCOL_VERSION, TERMINAL_WS_CLOSE_CODES, WS_CLOSE } from "./protocol.js";
 import type { KeyPair, WsClient, WsClientEvents } from "./types.js";
 
 const INITIAL_BACKOFF_MS = 1000;
@@ -25,10 +25,10 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		const wsUrl = `${url.replace(/^http/, "ws")}/agents/mail-agent/${agentId}?v=${PROTOCOL_VERSION}`;
 		ws = new WebSocket(wsUrl);
 
-		ws.addEventListener("open", () => {
-			backoff = INITIAL_BACKOFF_MS;
-		});
-
+		// NB: backoff is intentionally NOT reset on `open`. The server accepts the
+		// WS upgrade (101) before its auth logic runs, so `open` fires even for
+		// connections it is about to reject - resetting backoff there turns any
+		// server-side rejection into a ~1s reconnect loop. Reset on auth success.
 		ws.addEventListener("message", (event) => {
 			// Any message counts as a pong
 			awaitingPong = false;
@@ -44,11 +44,26 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 			}
 		});
 
-		ws.addEventListener("close", () => {
+		ws.addEventListener("close", (event) => {
 			if (closed) return;
 			accessToken = null;
 			stopPing();
 			events.onDisconnect();
+
+			const code = (event as CloseEvent).code;
+			if (TERMINAL_WS_CLOSE_CODES.includes(code)) {
+				// Reconnecting cannot fix this (outdated plugin, unregistered agent,
+				// or bad keys). Stop looping; the user must update/re-register/restart.
+				closed = true;
+				console.error(
+					`[agentpost] Connection rejected (code ${code}); not reconnecting. Update the plugin or re-register.`,
+				);
+				return;
+			}
+			if (code === WS_CLOSE.PENDING_VERIFICATION) {
+				// Waiting on email verification - poll slowly instead of hammering.
+				backoff = MAX_BACKOFF_MS;
+			}
 			scheduleReconnect();
 		});
 
@@ -77,6 +92,7 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 			case "auth_result":
 				if (msg.success) {
 					accessToken = msg.accessToken ?? null;
+					backoff = INITIAL_BACKOFF_MS;
 					startPing();
 					events.onAuthenticated();
 				} else {
