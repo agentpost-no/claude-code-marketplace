@@ -83,4 +83,6 @@ export interface WsClient {
 	close(): void;
 	send(msg: import("./protocol.js").ClientToWorker): void;
 	getAccessToken(): string | null;
+	/** True when the server reported this plugin is too old to connect. */
+	needsUpgrade(): boolean;
 }

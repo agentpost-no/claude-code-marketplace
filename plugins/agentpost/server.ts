@@ -28,7 +28,7 @@ function toolOk(message: string) {
 
 // --- MCP Server ---
 const mcp = new Server(
-	{ name: "agentpost", version: "0.0.4" },
+	{ name: "agentpost", version: "0.0.7" },
 	{
 		capabilities: {
 			tools: {},
@@ -156,6 +156,11 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 	}
 
 	if (!wsClient || !authenticated) {
+		if (wsClient?.needsUpgrade()) {
+			return toolError(
+				"PLEASE UPGRADE: this agentpost plugin is too old to connect to agentpost.no. Update the plugin (e.g. /plugin or reinstall), then restart Claude Code.",
+			);
+		}
 		return toolError("Email not connected. Waiting for WebSocket authentication.");
 	}
 
@@ -619,7 +624,9 @@ async function main() {
 	} else if (config && config.status === "pending") {
 		// Check if owner has verified since last run
 		try {
-			const res = await fetch(`${config.workerUrl}/api/status/${config.agentId}?pk=${encodeURIComponent(publicKeyB64)}`);
+			const res = await fetch(
+				`${config.workerUrl}/api/status/${config.agentId}?pk=${encodeURIComponent(publicKeyB64)}`,
+			);
 			const data = (await res.json()) as { status: string };
 			if (data.status === "active") {
 				config.status = "active";

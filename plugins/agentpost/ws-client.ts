@@ -7,6 +7,8 @@ const INITIAL_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 30000;
 const PING_INTERVAL_MS = 30_000;
 const PONG_TIMEOUT_MS = 10_000;
+/** Force-reconnect if a connection does not authenticate within this window. */
+const CONNECT_TIMEOUT_MS = 20_000;
 
 export function createWsClient(url: string, agentId: string, keys: KeyPair, events: WsClientEvents): WsClient {
 	let ws: WebSocket | null = null;
@@ -14,22 +16,48 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	let pingTimer: ReturnType<typeof setInterval> | null = null;
 	let pongTimer: ReturnType<typeof setTimeout> | null = null;
+	let connectTimer: ReturnType<typeof setTimeout> | null = null;
 	let closed = false;
 	let accessToken: string | null = null;
 	let awaitingPong = false;
+	let needsUpgrade = false;
+	let failedConnects = 0;
+	// Every connect() bumps this. Socket event handlers capture their generation
+	// and bail if a newer connect() has superseded them, so a late close/error
+	// from an abandoned socket can never disturb the current connection.
+	let generation = 0;
 
 	function connect() {
 		if (closed) return;
 		cleanup();
 
+		const myGen = ++generation;
 		const wsUrl = `${url.replace(/^http/, "ws")}/agents/mail-agent/${agentId}?v=${PROTOCOL_VERSION}`;
-		ws = new WebSocket(wsUrl);
+		const socket = new WebSocket(wsUrl);
+		ws = socket;
+
+		// Watchdog: nothing guarantees `open` (or auth) ever fires - a reconnect
+		// can wedge in CONNECTING after a network change or server restart, or open
+		// but never complete auth. Without this the client would sit unauthenticated
+		// forever. The ping watchdog only covers the post-auth window.
+		clearConnectWatchdog();
+		connectTimer = setTimeout(() => {
+			if (myGen !== generation) return;
+			console.error("[agentpost] Connection did not authenticate in time, reconnecting");
+			try {
+				socket.close();
+			} catch {
+				// Already closed
+			}
+			scheduleReconnect();
+		}, CONNECT_TIMEOUT_MS);
 
 		// NB: backoff is intentionally NOT reset on `open`. The server accepts the
 		// WS upgrade (101) before its auth logic runs, so `open` fires even for
 		// connections it is about to reject - resetting backoff there turns any
 		// server-side rejection into a ~1s reconnect loop. Reset on auth success.
-		ws.addEventListener("message", (event) => {
+		socket.addEventListener("message", (event) => {
+			if (myGen !== generation) return;
 			// Any message counts as a pong
 			awaitingPong = false;
 			clearPongTimeout();
@@ -44,13 +72,15 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 			}
 		});
 
-		ws.addEventListener("close", (event) => {
-			if (closed) return;
+		socket.addEventListener("close", (event) => {
+			if (myGen !== generation || closed) return;
 			accessToken = null;
 			stopPing();
+			clearConnectWatchdog();
 			events.onDisconnect();
 
 			const code = (event as CloseEvent).code;
+			if (code === WS_CLOSE.PROTOCOL_TOO_OLD) needsUpgrade = true;
 			if (TERMINAL_WS_CLOSE_CODES.includes(code)) {
 				// Reconnecting cannot fix this (outdated plugin, unregistered agent,
 				// or bad keys). Stop looping; the user must update/re-register/restart.
@@ -64,18 +94,43 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 				// Waiting on email verification - poll slowly instead of hammering.
 				backoff = MAX_BACKOFF_MS;
 			}
+			// The edge rejects outdated clients before the WS upgrade (HTTP 426), so
+			// a too-old client only ever sees a generic abnormal close. After a few
+			// failures, ask the server whether we are simply too old to connect.
+			failedConnects++;
+			if (failedConnects === 3) void checkUpgradeRequired();
 			scheduleReconnect();
 		});
 
-		ws.addEventListener("error", (err) => {
+		socket.addEventListener("error", (err) => {
+			if (myGen !== generation) return;
 			console.error("[agentpost] WebSocket error:", err);
-			// Force close to trigger reconnect via close handler
+			// Force close on this exact socket to trigger reconnect via close handler.
 			try {
-				ws?.close();
+				socket.close();
 			} catch {
 				// Already closed
 			}
 		});
+	}
+
+	/** Ask the server for its minimum protocol version; flag upgrade if we are below it. */
+	async function checkUpgradeRequired() {
+		try {
+			const res = await fetch(`${url.replace(/\/$/, "")}/version`);
+			if (!res.ok) return;
+			const { minProtocolVersion } = (await res.json()) as { minProtocolVersion?: number };
+			if (typeof minProtocolVersion === "number" && PROTOCOL_VERSION < minProtocolVersion) {
+				needsUpgrade = true;
+				closed = true;
+				cleanup();
+				console.error(
+					"[agentpost] PLEASE UPGRADE: this agentpost plugin is too old to connect. Update the plugin and restart.",
+				);
+			}
+		} catch {
+			// Network probe failed - leave reconnect loop running.
+		}
 	}
 
 	function handleMessage(msg: WorkerToClient) {
@@ -93,6 +148,8 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 				if (msg.success) {
 					accessToken = msg.accessToken ?? null;
 					backoff = INITIAL_BACKOFF_MS;
+					failedConnects = 0;
+					clearConnectWatchdog();
 					startPing();
 					events.onAuthenticated();
 				} else {
@@ -171,8 +228,16 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		}
 	}
 
+	function clearConnectWatchdog() {
+		if (connectTimer) {
+			clearTimeout(connectTimer);
+			connectTimer = null;
+		}
+	}
+
 	function cleanup() {
 		stopPing();
+		clearConnectWatchdog();
 		if (ws) {
 			try {
 				ws.close();
@@ -203,6 +268,10 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		return accessToken;
 	}
 
+	function isUpgradeRequired(): boolean {
+		return needsUpgrade;
+	}
+
 	function close() {
 		closed = true;
 		accessToken = null;
@@ -213,5 +282,5 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		cleanup();
 	}
 
-	return { connect, close, send, getAccessToken };
+	return { connect, close, send, getAccessToken, needsUpgrade: isUpgradeRequired };
 }
