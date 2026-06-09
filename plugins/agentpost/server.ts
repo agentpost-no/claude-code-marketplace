@@ -460,11 +460,33 @@ async function sendViaRest(
 
 // --- Email handling ---
 async function handleIncomingEmail(encrypted: EncryptedEmail) {
+	let rawMime: Uint8Array;
 	try {
 		const ciphertext = fromBase64(encrypted.encryptedContent);
-		const rawMime = sealedBoxDecrypt(ciphertext, keys.publicKey, keys.privateKey);
-		const email = await parseEmail(rawMime);
+		rawMime = sealedBoxDecrypt(ciphertext, keys.publicKey, keys.privateKey);
+	} catch (err) {
+		// Permanent failure: a message we cannot decrypt with our own keys will never
+		// succeed on retry. Ack it so the server stops re-delivering this poison message
+		// on every reconnect.
+		console.error(`[agentpost] Discarding undecryptable email ${encrypted.id} from ${encrypted.from}:`, err);
+		wsClient?.send({ type: "email_ack", id: encrypted.id });
+		return;
+	}
 
+	// Parsing is deterministic on fixed bytes: if it throws (malformed MIME, unexpected
+	// attachment encoding) it will throw identically on every redelivery. Treat it as
+	// permanent and ack, otherwise one bad email loops forever at every reconnect (the
+	// server's store-and-forward only drops on ack, and never purges undelivered rows).
+	let email: Awaited<ReturnType<typeof parseEmail>>;
+	try {
+		email = await parseEmail(rawMime);
+	} catch (err) {
+		console.error(`[agentpost] Discarding unparseable email ${encrypted.id} from ${encrypted.from}:`, err);
+		wsClient?.send({ type: "email_ack", id: encrypted.id });
+		return;
+	}
+
+	try {
 		const attachmentInfos = saveAttachments(email.attachments, encrypted.receivedAt);
 
 		const threadContext = email.inReplyTo ? lookupThread(email.inReplyTo) : null;
@@ -505,8 +527,16 @@ async function handleIncomingEmail(encrypted: EncryptedEmail) {
 
 		wsClient?.send({ type: "email_ack", id: encrypted.id });
 	} catch (err) {
-		console.error(`[agentpost] Failed to process email ${encrypted.id} from ${encrypted.from}:`, err);
-		wsClient?.send({ type: "email_ack", id: encrypted.id });
+		// Reaching here means decrypt and parse both succeeded, so the failure is in
+		// transient local I/O: saving attachments (disk full/permissions) or persisting
+		// threads.json or pushing the notification. Do NOT ack - acking tells the server
+		// the message is durably handled and it drops the message from its store-and-
+		// forward queue, silently losing mail. Leaving it unacked lets the server
+		// re-deliver on the next connect once the local condition clears.
+		console.error(
+			`[agentpost] Failed to process email ${encrypted.id} from ${encrypted.from} (left unacked for redelivery):`,
+			err,
+		);
 	}
 }
 

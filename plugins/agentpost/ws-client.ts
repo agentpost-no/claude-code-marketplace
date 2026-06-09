@@ -98,7 +98,12 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 			// a too-old client only ever sees a generic abnormal close. After a few
 			// failures, ask the server whether we are simply too old to connect.
 			failedConnects++;
-			if (failedConnects === 3) void checkUpgradeRequired();
+			// Re-probe periodically, not just at exactly 3. A too-old client never
+			// authenticates (so failedConnects never resets), and the /version probe can
+			// itself fail transiently (machine offline, worker redeploying). A strict
+			// `=== 3` check would then never fire again and the client would reconnect
+			// forever without ever surfacing the upgrade notice.
+			if (failedConnects >= 3 && failedConnects % 3 === 0) void checkUpgradeRequired();
 			scheduleReconnect();
 		});
 
