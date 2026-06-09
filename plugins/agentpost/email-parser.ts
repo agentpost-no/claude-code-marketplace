@@ -15,7 +15,10 @@ turndown.remove(["style", "script", "head", "meta", "title"]);
 
 function htmlToMarkdown(html: string): string {
 	try {
-		return turndown.turndown(html).replace(/\n{3,}/g, "\n\n").trim();
+		return turndown
+			.turndown(html)
+			.replace(/\n{3,}/g, "\n\n")
+			.trim();
 	} catch {
 		return html.replace(/<[^>]*>/g, "");
 	}
@@ -104,7 +107,13 @@ export function formatEmailContent(email: ParsedEmail, threadContext?: ThreadCon
 	const nonce = crypto.randomUUID().slice(0, 8);
 	const parts: string[] = [];
 
-	if (threadContext) {
+	// Only render a thread context as "trusted" when it is something WE sent
+	// (outbound === true). Inbound emails are also stored as thread entries (so we can
+	// reply to them), and In-Reply-To is an attacker-controlled header: a sender can
+	// reference a prior inbound message's id and, without this guard, get their own
+	// earlier body echoed back inside the trusted block as "what you previously sent" -
+	// smuggling instructions across the prompt-injection boundary.
+	if (threadContext?.outbound === true) {
 		parts.push(
 			"THREAD CONTEXT (trusted - this is what you previously sent):",
 			"---",
