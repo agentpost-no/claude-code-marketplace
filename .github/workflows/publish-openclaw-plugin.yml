@@ -42,10 +42,12 @@ jobs:
         with:
           bun-version: latest
 
-      # Runtime dependencies only. The openclaw devDependency is a ~200MB download that
-      # the bundle marks external anyway; typecheck against it belongs in CI, not here.
-      - name: Install runtime dependencies
-        run: npm install --omit=dev --ignore-scripts
+      # Only what the bundle inlines. Those imports live in plugins/agentpost and resolve
+      # from there; nothing in this package's own node_modules is needed to build, and
+      # the openclaw devDependency is a ~200MB download the bundle marks external anyway.
+      - name: Install build dependencies
+        run: bun install --frozen-lockfile
+        working-directory: plugins/agentpost
 
       - name: Build bundle
         run: bun run build

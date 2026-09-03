@@ -6,13 +6,13 @@
       "name": "@agentpost/openclaw-agentpost",
       "dependencies": {
         "libsodium-wrappers-sumo": "^0.7.15",
-        "postal-mime": "^2.4.1",
-        "turndown": "^7.2.4",
       },
       "devDependencies": {
         "@types/node": "^22",
         "@types/turndown": "^5.0.6",
         "openclaw": "^2026.8.2",
+        "postal-mime": "^2.4.1",
+        "turndown": "^7.2.4",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {

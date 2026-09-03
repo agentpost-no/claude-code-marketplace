@@ -5,12 +5,18 @@
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.mjs",
-  "files": ["dist", "openclaw.plugin.json", "README.md"],
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
   "engines": {
     "node": ">=22.22.3"
   },
   "openclaw": {
-    "extensions": ["./dist/index.mjs"],
+    "extensions": [
+      "./dist/index.mjs"
+    ],
     "channel": {
       "id": "agentpost",
       "label": "Agentpost",
@@ -27,9 +33,7 @@
     "prepare": "bun run build"
   },
   "dependencies": {
-    "libsodium-wrappers-sumo": "^0.7.15",
-    "postal-mime": "^2.4.1",
-    "turndown": "^7.2.4"
+    "libsodium-wrappers-sumo": "^0.7.15"
   },
   "peerDependencies": {
     "openclaw": ">=2026.8.2"
@@ -38,6 +42,8 @@
     "@types/node": "^22",
     "@types/turndown": "^5.0.6",
     "openclaw": "^2026.8.2",
+    "postal-mime": "^2.4.1",
+    "turndown": "^7.2.4",
     "typescript": "^5.9.3"
   }
 }

@@ -32,6 +32,10 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+      # The bundle inlines the shared core from plugins/agentpost, and module resolution
+      # for that source starts there, not in this package.
+      - run: bun install --frozen-lockfile
+        working-directory: plugins/agentpost
       # Full install here, openclaw devDependency included: this is the job that proves
       # the plugin still matches the SDK contract it is compiled against.
       - run: bun install --frozen-lockfile
