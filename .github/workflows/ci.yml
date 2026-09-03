@@ -39,13 +39,13 @@ jobs:
       # Full install here, openclaw devDependency included: this is the job that proves
       # the plugin still matches the SDK contract it is compiled against.
       - run: bun install --frozen-lockfile
-        working-directory: packages/openclaw-agentpost
+        working-directory: packages/openclaw
       - run: bunx typescript@5.9.3 --noEmit -p tsconfig.json
-        working-directory: packages/openclaw-agentpost
+        working-directory: packages/openclaw
       - run: bun run build
-        working-directory: packages/openclaw-agentpost
+        working-directory: packages/openclaw
       - name: Load the built plugin
-        working-directory: packages/openclaw-agentpost
+        working-directory: packages/openclaw
         # Catches what typecheck cannot: a bundle the host refuses to evaluate, such as
         # a top-level await that is illegal once the loader wraps the module.
         run: |

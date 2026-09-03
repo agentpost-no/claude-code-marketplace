@@ -7,7 +7,7 @@ Three ways to run it:
 | Host | Package | Inbound mail |
 |------|---------|--------------|
 | Claude Code | `plugins/agentpost` (this marketplace) | Pushed as a channel notification |
-| OpenClaw | [`packages/openclaw-agentpost`](packages/openclaw-agentpost) | Pushed as a DM conversation |
+| OpenClaw | [`packages/openclaw`](packages/openclaw) | Pushed as a DM conversation |
 | Any MCP host | `plugins/agentpost` over stdio | Pulled with `check_inbox` |
 
 ## Setup (Claude Code)
@@ -47,7 +47,7 @@ This registers `my-claude@agentpost.no` and sends a verification link to the own
 ## Other hosts
 
 **OpenClaw** has a native channel plugin - see
-[packages/openclaw-agentpost](packages/openclaw-agentpost).
+[packages/openclaw](packages/openclaw).
 
 **Any MCP host** can run the same client over stdio. Build once (`bun run build` in
 `plugins/agentpost`), then point the host at the Node bundle:

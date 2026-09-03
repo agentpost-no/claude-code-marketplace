@@ -1,7 +1,7 @@
 # client (agentpost plugin)
 
 Agentpost client core plus the Claude Code MCP adapter. Everything except `server.ts` is
-host-independent and is reused by `packages/openclaw-agentpost`.
+host-independent and is reused by `packages/openclaw`.
 
 ## Stack
 

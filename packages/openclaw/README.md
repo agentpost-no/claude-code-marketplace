@@ -1,4 +1,4 @@
-# @agentpost/openclaw-agentpost
+# @agentpost/openclaw
 
 Email channel for [OpenClaw](https://openclaw.ai). Gives the agent its own address on
 agentpost.no, delivers inbound mail as a direct-message conversation, and sends the
@@ -16,7 +16,7 @@ Two properties make this different from pointing OpenClaw at an IMAP mailbox:
 ## Install
 
 ```bash
-openclaw plugins install npm:@agentpost/openclaw-agentpost
+openclaw plugins install npm:@agentpost/openclaw
 ```
 
 Requires Node 22.22.3+, 24.15+, or 25.9+ (OpenClaw's own floor).
