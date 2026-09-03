@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 import { hmac } from "./crypto.js";
 import { loadJsonFile, saveJsonFile } from "./file-store.js";
-import { THREADS_PATH } from "./paths.js";
+import { threadsPath } from "./paths.js";
 import type { ThreadContext, ThreadSignInput } from "./types.js";
 
 const require = createRequire(import.meta.url);
@@ -20,13 +20,13 @@ let cache: ThreadStore | null = null;
 
 function getStore(): ThreadStore {
 	if (!cache) {
-		cache = loadJsonFile<ThreadStore>(THREADS_PATH, EMPTY_STORE);
+		cache = loadJsonFile<ThreadStore>(threadsPath(), EMPTY_STORE);
 	}
 	return cache;
 }
 
 function persist(): void {
-	if (cache) saveJsonFile(THREADS_PATH, cache);
+	if (cache) saveJsonFile(threadsPath(), cache);
 }
 
 export function signThread(hmacKey: Uint8Array, input: ThreadSignInput): string {

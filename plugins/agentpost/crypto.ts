@@ -1,7 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
-import { KEYS_DIR } from "./paths.js";
+import { keysDir } from "./paths.js";
 import type { KeyPair } from "./types.js";
 
 const require = createRequire(import.meta.url);
@@ -20,7 +20,7 @@ export function sealedBoxDecrypt(ciphertext: Uint8Array, publicKey: Uint8Array, 
 	return sodium.crypto_box_seal_open(ciphertext, publicKey, privateKey);
 }
 
-export function loadOrGenerateKeys(dir: string = KEYS_DIR): KeyPair {
+export function loadOrGenerateKeys(dir: string = keysDir()): KeyPair {
 	mkdirSync(dir, { recursive: true, mode: 0o700 });
 	const pubPath = join(dir, "public.key");
 	const privPath = join(dir, "private.key");
@@ -39,7 +39,7 @@ export function loadOrGenerateKeys(dir: string = KEYS_DIR): KeyPair {
 	return { publicKey: kp.publicKey, privateKey: kp.privateKey };
 }
 
-export function loadOrGenerateHmacKey(dir: string = KEYS_DIR): Uint8Array {
+export function loadOrGenerateHmacKey(dir: string = keysDir()): Uint8Array {
 	mkdirSync(dir, { recursive: true, mode: 0o700 });
 	const hmacPath = join(dir, "hmac.key");
 

@@ -79,7 +79,9 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 			clearConnectWatchdog();
 			events.onDisconnect();
 
-			const code = (event as CloseEvent).code;
+			// Typed structurally rather than as CloseEvent: the DOM lib is not loaded in
+			// every host that embeds this client (a plain Node build has no CloseEvent).
+			const code = (event as { code?: number }).code ?? 0;
 			if (code === WS_CLOSE.PROTOCOL_TOO_OLD) needsUpgrade = true;
 			if (TERMINAL_WS_CLOSE_CODES.includes(code)) {
 				// Reconnecting cannot fix this (outdated plugin, unregistered agent,

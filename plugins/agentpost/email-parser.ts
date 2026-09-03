@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import PostalMime from "postal-mime";
 import TurndownService from "turndown";
-import { ATTACHMENTS_DIR } from "./paths.js";
+import { attachmentsDir } from "./paths.js";
 import type { AttachmentInfo, EmailLink, ParsedAttachment, ParsedEmail, ThreadContext } from "./types.js";
 
 const turndown = new TurndownService({
@@ -184,7 +184,7 @@ export function saveAttachments(attachments: ParsedAttachment[], date: string): 
 	if (attachments.length === 0) return [];
 
 	const dateStr = date.slice(0, 10);
-	const dir = join(ATTACHMENTS_DIR, dateStr);
+	const dir = join(attachmentsDir(), dateStr);
 	mkdirSync(dir, { recursive: true, mode: 0o700 });
 
 	return attachments.map((a) => {

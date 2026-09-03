@@ -1,4 +1,5 @@
-// @bun
+#!/usr/bin/env node
+import { createRequire } from "node:module";
 var __create = Object.create;
 var __getProtoOf = Object.getPrototypeOf;
 var __defProp = Object.defineProperty;
@@ -43,7 +44,7 @@ var __export = (target, all) => {
       set: __exportSetter.bind(all, name)
     });
 };
-var __require = import.meta.require;
+var __require = /* @__PURE__ */ createRequire(import.meta.url);
 
 // node_modules/ajv/dist/compile/codegen/code.js
 var require_code = __commonJS((exports) => {
@@ -7128,9 +7129,9 @@ var require_LinkedList = __commonJS((exports, module) => {
 var require_NodeUtils = __commonJS((exports, module) => {
   module.exports = {
     serializeOne,
-    \u{275}escapeMatchingClosingTag: escapeMatchingClosingTag,
-    \u{275}escapeClosingCommentTag: escapeClosingCommentTag,
-    \u{275}escapeProcessingInstructionContent: escapeProcessingInstructionContent
+    ɵescapeMatchingClosingTag: escapeMatchingClosingTag,
+    ɵescapeClosingCommentTag: escapeClosingCommentTag,
+    ɵescapeProcessingInstructionContent: escapeProcessingInstructionContent
   };
   var utils = require_utils2();
   var NAMESPACE = utils.NAMESPACE;
@@ -7178,7 +7179,7 @@ var require_NodeUtils = __commonJS((exports, module) => {
           return "&lt;";
         case ">":
           return "&gt;";
-        case "\xA0":
+        case " ":
           return "&nbsp;";
       }
     });
@@ -7197,7 +7198,7 @@ var require_NodeUtils = __commonJS((exports, module) => {
           return "&amp;";
         case '"':
           return "&quot;";
-        case "\xA0":
+        case " ":
           return "&nbsp;";
       }
     });
@@ -7977,8 +7978,8 @@ var require_xmlnames = __commonJS((exports) => {
   exports.isValidQName = isValidQName;
   var simplename = /^[_:A-Za-z][-.:\w]+$/;
   var simpleqname = /^([_A-Za-z][-.\w]+|[_A-Za-z][-.\w]+:[_A-Za-z][-.\w]+)$/;
-  var ncnamestartchars = "_A-Za-z\xC0-\xD6\xD8-\xF6\xF8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD";
-  var ncnamechars = "-._A-Za-z0-9\xB7\xC0-\xD6\xD8-\xF6\xF8-\u02FF\u0300-\u037D\u037F-\u1FFF\u200C\u200D\u203F\u2040\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD";
+  var ncnamestartchars = "_A-Za-zÀ-ÖØ-öø-˿Ͱ-ͽͿ-῿‌-‍⁰-↏Ⰰ-⿯、-퟿豈-﷏ﷰ-�";
+  var ncnamechars = "-._A-Za-z0-9·À-ÖØ-öø-˿̀-ͽͿ-῿‌‍‿⁀⁰-↏Ⰰ-⿯、-퟿豈-﷏ﷰ-�";
   var ncname = "[" + ncnamestartchars + "][" + ncnamechars + "]*";
   var namestartchars = ncnamestartchars + ":";
   var namechars = ncnamechars + ":";
@@ -17088,7 +17089,7 @@ var require_HTMLParser = __commonJS((exports, module) => {
             leftovers = "";
           }
           if (end) {
-            s += "\uFFFF";
+            s += "￿";
             input_complete = true;
           }
           chars = s;
@@ -19380,7 +19381,7 @@ var require_HTMLParser = __commonJS((exports, module) => {
         nextchar += len;
       }
       var comment = lookahead.substring(0, len - 1);
-      comment = comment.replace(/\u0000/g, "\uFFFD");
+      comment = comment.replace(/\u0000/g, "�");
       comment = comment.replace(/\u000D\u000A/g, `
 `);
       comment = comment.replace(/\u000D/g, `
@@ -21909,7 +21910,7 @@ var require_HTMLParser = __commonJS((exports, module) => {
           if (frameset_ok && NONWSNONNUL.test(value))
             frameset_ok = false;
           if (textIncludesNUL) {
-            value = value.replace(NULCHARS, "\uFFFD");
+            value = value.replace(NULCHARS, "�");
           }
           insertText(value);
           return;
@@ -22360,6 +22361,677 @@ var require_lib = __commonJS((exports) => {
     return new impl.Window(document);
   };
   exports.impl = impl;
+});
+
+// node_modules/turndown/lib/turndown.cjs.js
+var require_turndown_cjs = __commonJS((exports, module) => {
+  function extend2(destination) {
+    for (var i = 1;i < arguments.length; i++) {
+      var source = arguments[i];
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key))
+          destination[key] = source[key];
+      }
+    }
+    return destination;
+  }
+  function repeat(character, count) {
+    return Array(count + 1).join(character);
+  }
+  function trimLeadingNewlines(string4) {
+    return string4.replace(/^\n*/, "");
+  }
+  function trimTrailingNewlines(string4) {
+    var indexEnd = string4.length;
+    while (indexEnd > 0 && string4[indexEnd - 1] === `
+`)
+      indexEnd--;
+    return string4.substring(0, indexEnd);
+  }
+  function trimNewlines(string4) {
+    return trimTrailingNewlines(trimLeadingNewlines(string4));
+  }
+  var blockElements = ["ADDRESS", "ARTICLE", "ASIDE", "AUDIO", "BLOCKQUOTE", "BODY", "CANVAS", "CENTER", "DD", "DIR", "DIV", "DL", "DT", "FIELDSET", "FIGCAPTION", "FIGURE", "FOOTER", "FORM", "FRAMESET", "H1", "H2", "H3", "H4", "H5", "H6", "HEADER", "HGROUP", "HR", "HTML", "ISINDEX", "LI", "MAIN", "MENU", "NAV", "NOFRAMES", "NOSCRIPT", "OL", "OUTPUT", "P", "PRE", "SECTION", "TABLE", "TBODY", "TD", "TFOOT", "TH", "THEAD", "TR", "UL"];
+  function isBlock(node) {
+    return is(node, blockElements);
+  }
+  var voidElements = ["AREA", "BASE", "BR", "COL", "COMMAND", "EMBED", "HR", "IMG", "INPUT", "KEYGEN", "LINK", "META", "PARAM", "SOURCE", "TRACK", "WBR"];
+  function isVoid(node) {
+    return is(node, voidElements);
+  }
+  function hasVoid(node) {
+    return has(node, voidElements);
+  }
+  var meaningfulWhenBlankElements = ["A", "TABLE", "THEAD", "TBODY", "TFOOT", "TH", "TD", "IFRAME", "SCRIPT", "AUDIO", "VIDEO"];
+  function isMeaningfulWhenBlank(node) {
+    return is(node, meaningfulWhenBlankElements);
+  }
+  function hasMeaningfulWhenBlank(node) {
+    return has(node, meaningfulWhenBlankElements);
+  }
+  function is(node, tagNames) {
+    return tagNames.indexOf(node.nodeName) >= 0;
+  }
+  function has(node, tagNames) {
+    return node.getElementsByTagName && tagNames.some(function(tagName) {
+      return node.getElementsByTagName(tagName).length;
+    });
+  }
+  var markdownEscapes = [[/\\/g, "\\\\"], [/\*/g, "\\*"], [/^-/g, "\\-"], [/^\+ /g, "\\+ "], [/^(=+)/g, "\\$1"], [/^(#{1,6}) /g, "\\$1 "], [/`/g, "\\`"], [/^~~~/g, "\\~~~"], [/\[/g, "\\["], [/\]/g, "\\]"], [/^>/g, "\\>"], [/_/g, "\\_"], [/^(\d+)\. /g, "$1\\. "]];
+  function escapeMarkdown(string4) {
+    return markdownEscapes.reduce(function(accumulator, escape2) {
+      return accumulator.replace(escape2[0], escape2[1]);
+    }, string4);
+  }
+  var rules = {};
+  rules.paragraph = {
+    filter: "p",
+    replacement: function(content) {
+      return `
+
+` + content + `
+
+`;
+    }
+  };
+  rules.lineBreak = {
+    filter: "br",
+    replacement: function(content, node, options) {
+      return options.br + `
+`;
+    }
+  };
+  rules.heading = {
+    filter: ["h1", "h2", "h3", "h4", "h5", "h6"],
+    replacement: function(content, node, options) {
+      var hLevel = Number(node.nodeName.charAt(1));
+      if (options.headingStyle === "setext" && hLevel < 3) {
+        var underline = repeat(hLevel === 1 ? "=" : "-", content.length);
+        return `
+
+` + content + `
+` + underline + `
+
+`;
+      } else {
+        return `
+
+` + repeat("#", hLevel) + " " + content + `
+
+`;
+      }
+    }
+  };
+  rules.blockquote = {
+    filter: "blockquote",
+    replacement: function(content) {
+      content = trimNewlines(content).replace(/^/gm, "> ");
+      return `
+
+` + content + `
+
+`;
+    }
+  };
+  rules.list = {
+    filter: ["ul", "ol"],
+    replacement: function(content, node) {
+      var parent = node.parentNode;
+      if (parent.nodeName === "LI" && parent.lastElementChild === node) {
+        return `
+` + content;
+      } else {
+        return `
+
+` + content + `
+
+`;
+      }
+    }
+  };
+  rules.listItem = {
+    filter: "li",
+    replacement: function(content, node, options) {
+      var prefix = options.bulletListMarker + "   ";
+      var parent = node.parentNode;
+      if (parent.nodeName === "OL") {
+        var start = parent.getAttribute("start");
+        var index = Array.prototype.indexOf.call(parent.children, node);
+        prefix = (start ? Number(start) + index : index + 1) + ".  ";
+      }
+      var isParagraph = /\n$/.test(content);
+      content = trimNewlines(content) + (isParagraph ? `
+` : "");
+      content = content.replace(/\n/gm, `
+` + " ".repeat(prefix.length));
+      return prefix + content + (node.nextSibling ? `
+` : "");
+    }
+  };
+  rules.indentedCodeBlock = {
+    filter: function(node, options) {
+      return options.codeBlockStyle === "indented" && node.nodeName === "PRE" && node.firstChild && node.firstChild.nodeName === "CODE";
+    },
+    replacement: function(content, node, options) {
+      return `
+
+    ` + node.firstChild.textContent.replace(/\n/g, `
+    `) + `
+
+`;
+    }
+  };
+  rules.fencedCodeBlock = {
+    filter: function(node, options) {
+      return options.codeBlockStyle === "fenced" && node.nodeName === "PRE" && node.firstChild && node.firstChild.nodeName === "CODE";
+    },
+    replacement: function(content, node, options) {
+      var className = node.firstChild.getAttribute("class") || "";
+      var language = (className.match(/language-(\S+)/) || [null, ""])[1];
+      var code = node.firstChild.textContent;
+      var fenceChar = options.fence.charAt(0);
+      var fenceSize = 3;
+      var fenceInCodeRegex = new RegExp("^" + fenceChar + "{3,}", "gm");
+      var match;
+      while (match = fenceInCodeRegex.exec(code)) {
+        if (match[0].length >= fenceSize) {
+          fenceSize = match[0].length + 1;
+        }
+      }
+      var fence = repeat(fenceChar, fenceSize);
+      return `
+
+` + fence + language + `
+` + code.replace(/\n$/, "") + `
+` + fence + `
+
+`;
+    }
+  };
+  rules.horizontalRule = {
+    filter: "hr",
+    replacement: function(content, node, options) {
+      return `
+
+` + options.hr + `
+
+`;
+    }
+  };
+  rules.inlineLink = {
+    filter: function(node, options) {
+      return options.linkStyle === "inlined" && node.nodeName === "A" && node.getAttribute("href");
+    },
+    replacement: function(content, node) {
+      var href = escapeLinkDestination(node.getAttribute("href"));
+      var title = escapeLinkTitle(cleanAttribute(node.getAttribute("title")));
+      var titlePart = title ? ' "' + title + '"' : "";
+      return "[" + content + "](" + href + titlePart + ")";
+    }
+  };
+  rules.referenceLink = {
+    filter: function(node, options) {
+      return options.linkStyle === "referenced" && node.nodeName === "A" && node.getAttribute("href");
+    },
+    replacement: function(content, node, options) {
+      var href = escapeLinkDestination(node.getAttribute("href"));
+      var title = cleanAttribute(node.getAttribute("title"));
+      if (title)
+        title = ' "' + escapeLinkTitle(title) + '"';
+      var replacement;
+      var reference;
+      switch (options.linkReferenceStyle) {
+        case "collapsed":
+          replacement = "[" + content + "][]";
+          reference = "[" + content + "]: " + href + title;
+          break;
+        case "shortcut":
+          replacement = "[" + content + "]";
+          reference = "[" + content + "]: " + href + title;
+          break;
+        default:
+          var id = this.references.length + 1;
+          replacement = "[" + content + "][" + id + "]";
+          reference = "[" + id + "]: " + href + title;
+      }
+      this.references.push(reference);
+      return replacement;
+    },
+    references: [],
+    append: function(options) {
+      var references = "";
+      if (this.references.length) {
+        references = `
+
+` + this.references.join(`
+`) + `
+
+`;
+        this.references = [];
+      }
+      return references;
+    }
+  };
+  rules.emphasis = {
+    filter: ["em", "i"],
+    replacement: function(content, node, options) {
+      if (!content.trim())
+        return "";
+      return options.emDelimiter + content + options.emDelimiter;
+    }
+  };
+  rules.strong = {
+    filter: ["strong", "b"],
+    replacement: function(content, node, options) {
+      if (!content.trim())
+        return "";
+      return options.strongDelimiter + content + options.strongDelimiter;
+    }
+  };
+  rules.code = {
+    filter: function(node) {
+      var hasSiblings = node.previousSibling || node.nextSibling;
+      var isCodeBlock = node.parentNode.nodeName === "PRE" && !hasSiblings;
+      return node.nodeName === "CODE" && !isCodeBlock;
+    },
+    replacement: function(content) {
+      if (!content)
+        return "";
+      content = content.replace(/\r?\n|\r/g, " ");
+      var extraSpace = /^`|^ .*?[^ ].* $|`$/.test(content) ? " " : "";
+      var delimiter = "`";
+      var matches = content.match(/`+/gm) || [];
+      while (matches.indexOf(delimiter) !== -1)
+        delimiter = delimiter + "`";
+      return delimiter + extraSpace + content + extraSpace + delimiter;
+    }
+  };
+  rules.image = {
+    filter: "img",
+    replacement: function(content, node) {
+      var alt = escapeMarkdown(cleanAttribute(node.getAttribute("alt")));
+      var src = escapeLinkDestination(node.getAttribute("src") || "");
+      var title = cleanAttribute(node.getAttribute("title"));
+      var titlePart = title ? ' "' + escapeLinkTitle(title) + '"' : "";
+      return src ? "![" + alt + "]" + "(" + src + titlePart + ")" : "";
+    }
+  };
+  function cleanAttribute(attribute) {
+    return attribute ? attribute.replace(/(\n+\s*)+/g, `
+`) : "";
+  }
+  function escapeLinkDestination(destination) {
+    var escaped = destination.replace(/([<>()])/g, "\\$1");
+    return escaped.indexOf(" ") >= 0 ? "<" + escaped + ">" : escaped;
+  }
+  function escapeLinkTitle(title) {
+    return title.replace(/"/g, "\\\"");
+  }
+  function Rules(options) {
+    this.options = options;
+    this._keep = [];
+    this._remove = [];
+    this.blankRule = {
+      replacement: options.blankReplacement
+    };
+    this.keepReplacement = options.keepReplacement;
+    this.defaultRule = {
+      replacement: options.defaultReplacement
+    };
+    this.array = [];
+    for (var key in options.rules)
+      this.array.push(options.rules[key]);
+  }
+  Rules.prototype = {
+    add: function(key, rule) {
+      this.array.unshift(rule);
+    },
+    keep: function(filter) {
+      this._keep.unshift({
+        filter,
+        replacement: this.keepReplacement
+      });
+    },
+    remove: function(filter) {
+      this._remove.unshift({
+        filter,
+        replacement: function() {
+          return "";
+        }
+      });
+    },
+    forNode: function(node) {
+      if (node.isBlank)
+        return this.blankRule;
+      var rule;
+      if (rule = findRule(this.array, node, this.options))
+        return rule;
+      if (rule = findRule(this._keep, node, this.options))
+        return rule;
+      if (rule = findRule(this._remove, node, this.options))
+        return rule;
+      return this.defaultRule;
+    },
+    forEach: function(fn) {
+      for (var i = 0;i < this.array.length; i++)
+        fn(this.array[i], i);
+    }
+  };
+  function findRule(rules2, node, options) {
+    for (var i = 0;i < rules2.length; i++) {
+      var rule = rules2[i];
+      if (filterValue(rule, node, options))
+        return rule;
+    }
+    return;
+  }
+  function filterValue(rule, node, options) {
+    var filter = rule.filter;
+    if (typeof filter === "string") {
+      if (filter === node.nodeName.toLowerCase())
+        return true;
+    } else if (Array.isArray(filter)) {
+      if (filter.indexOf(node.nodeName.toLowerCase()) > -1)
+        return true;
+    } else if (typeof filter === "function") {
+      if (filter.call(rule, node, options))
+        return true;
+    } else {
+      throw new TypeError("`filter` needs to be a string, array, or function");
+    }
+  }
+  function collapseWhitespace(options) {
+    var element = options.element;
+    var isBlock2 = options.isBlock;
+    var isVoid2 = options.isVoid;
+    var isPre = options.isPre || function(node2) {
+      return node2.nodeName === "PRE";
+    };
+    if (!element.firstChild || isPre(element))
+      return;
+    var prevText = null;
+    var keepLeadingWs = false;
+    var prev = null;
+    var node = next(prev, element, isPre);
+    while (node !== element) {
+      if (node.nodeType === 3 || node.nodeType === 4) {
+        var text = node.data.replace(/[ \r\n\t]+/g, " ");
+        if ((!prevText || / $/.test(prevText.data)) && !keepLeadingWs && text[0] === " ") {
+          text = text.substr(1);
+        }
+        if (!text) {
+          node = remove(node);
+          continue;
+        }
+        node.data = text;
+        prevText = node;
+      } else if (node.nodeType === 1) {
+        if (isBlock2(node) || node.nodeName === "BR") {
+          if (prevText) {
+            prevText.data = prevText.data.replace(/ $/, "");
+          }
+          prevText = null;
+          keepLeadingWs = false;
+        } else if (isVoid2(node) || isPre(node)) {
+          prevText = null;
+          keepLeadingWs = true;
+        } else if (prevText) {
+          keepLeadingWs = false;
+        }
+      } else {
+        node = remove(node);
+        continue;
+      }
+      var nextNode = next(prev, node, isPre);
+      prev = node;
+      node = nextNode;
+    }
+    if (prevText) {
+      prevText.data = prevText.data.replace(/ $/, "");
+      if (!prevText.data) {
+        remove(prevText);
+      }
+    }
+  }
+  function remove(node) {
+    var next2 = node.nextSibling || node.parentNode;
+    node.parentNode.removeChild(node);
+    return next2;
+  }
+  function next(prev, current, isPre) {
+    if (prev && prev.parentNode === current || isPre(current)) {
+      return current.nextSibling || current.parentNode;
+    }
+    return current.firstChild || current.nextSibling || current.parentNode;
+  }
+  var root = typeof window !== "undefined" ? window : {};
+  function canParseHTMLNatively() {
+    var Parser = root.DOMParser;
+    var canParse = false;
+    try {
+      if (new Parser().parseFromString("", "text/html")) {
+        canParse = true;
+      }
+    } catch (e) {}
+    return canParse;
+  }
+  function createHTMLParser() {
+    var Parser = function() {};
+    {
+      var domino = require_lib();
+      Parser.prototype.parseFromString = function(string4) {
+        return domino.createDocument(string4);
+      };
+    }
+    return Parser;
+  }
+  var HTMLParser = canParseHTMLNatively() ? root.DOMParser : createHTMLParser();
+  function RootNode(input, options) {
+    var root2;
+    if (typeof input === "string") {
+      var doc2 = htmlParser().parseFromString('<x-turndown id="turndown-root">' + input + "</x-turndown>", "text/html");
+      root2 = doc2.getElementById("turndown-root");
+    } else {
+      root2 = input.cloneNode(true);
+    }
+    collapseWhitespace({
+      element: root2,
+      isBlock,
+      isVoid,
+      isPre: options.preformattedCode ? isPreOrCode : null
+    });
+    return root2;
+  }
+  var _htmlParser;
+  function htmlParser() {
+    _htmlParser = _htmlParser || new HTMLParser;
+    return _htmlParser;
+  }
+  function isPreOrCode(node) {
+    return node.nodeName === "PRE" || node.nodeName === "CODE";
+  }
+  function Node(node, options) {
+    node.isBlock = isBlock(node);
+    node.isCode = node.nodeName === "CODE" || node.parentNode.isCode;
+    node.isBlank = isBlank(node);
+    node.flankingWhitespace = flankingWhitespace(node, options);
+    return node;
+  }
+  function isBlank(node) {
+    return !isVoid(node) && !isMeaningfulWhenBlank(node) && /^\s*$/i.test(node.textContent) && !hasVoid(node) && !hasMeaningfulWhenBlank(node);
+  }
+  function flankingWhitespace(node, options) {
+    if (node.isBlock || options.preformattedCode && node.isCode) {
+      return {
+        leading: "",
+        trailing: ""
+      };
+    }
+    var edges = edgeWhitespace(node.textContent);
+    if (edges.leadingAscii && isFlankedByWhitespace("left", node, options)) {
+      edges.leading = edges.leadingNonAscii;
+    }
+    if (edges.trailingAscii && isFlankedByWhitespace("right", node, options)) {
+      edges.trailing = edges.trailingNonAscii;
+    }
+    return {
+      leading: edges.leading,
+      trailing: edges.trailing
+    };
+  }
+  function edgeWhitespace(string4) {
+    var m = string4.match(/^(([ \t\r\n]*)(\s*))(?:(?=\S)[\s\S]*\S)?((\s*?)([ \t\r\n]*))$/);
+    return {
+      leading: m[1],
+      leadingAscii: m[2],
+      leadingNonAscii: m[3],
+      trailing: m[4],
+      trailingNonAscii: m[5],
+      trailingAscii: m[6]
+    };
+  }
+  function isFlankedByWhitespace(side, node, options) {
+    var sibling;
+    var regExp;
+    var isFlanked;
+    if (side === "left") {
+      sibling = node.previousSibling;
+      regExp = / $/;
+    } else {
+      sibling = node.nextSibling;
+      regExp = /^ /;
+    }
+    if (sibling) {
+      if (sibling.nodeType === 3) {
+        isFlanked = regExp.test(sibling.nodeValue);
+      } else if (options.preformattedCode && sibling.nodeName === "CODE") {
+        isFlanked = false;
+      } else if (sibling.nodeType === 1 && !isBlock(sibling)) {
+        isFlanked = regExp.test(sibling.textContent);
+      }
+    }
+    return isFlanked;
+  }
+  var reduce = Array.prototype.reduce;
+  function TurndownService(options) {
+    if (!(this instanceof TurndownService))
+      return new TurndownService(options);
+    var defaults = {
+      rules,
+      headingStyle: "setext",
+      hr: "* * *",
+      bulletListMarker: "*",
+      codeBlockStyle: "indented",
+      fence: "```",
+      emDelimiter: "_",
+      strongDelimiter: "**",
+      linkStyle: "inlined",
+      linkReferenceStyle: "full",
+      br: "  ",
+      preformattedCode: false,
+      blankReplacement: function(content, node) {
+        return node.isBlock ? `
+
+` : "";
+      },
+      keepReplacement: function(content, node) {
+        return node.isBlock ? `
+
+` + node.outerHTML + `
+
+` : node.outerHTML;
+      },
+      defaultReplacement: function(content, node) {
+        return node.isBlock ? `
+
+` + content + `
+
+` : content;
+      }
+    };
+    this.options = extend2({}, defaults, options);
+    this.rules = new Rules(this.options);
+  }
+  TurndownService.prototype = {
+    turndown: function(input) {
+      if (!canConvert(input)) {
+        throw new TypeError(input + " is not a string, or an element/document/fragment node.");
+      }
+      if (input === "")
+        return "";
+      var output = process4.call(this, new RootNode(input, this.options));
+      return postProcess.call(this, output);
+    },
+    use: function(plugin) {
+      if (Array.isArray(plugin)) {
+        for (var i = 0;i < plugin.length; i++)
+          this.use(plugin[i]);
+      } else if (typeof plugin === "function") {
+        plugin(this);
+      } else {
+        throw new TypeError("plugin must be a Function or an Array of Functions");
+      }
+      return this;
+    },
+    addRule: function(key, rule) {
+      this.rules.add(key, rule);
+      return this;
+    },
+    keep: function(filter) {
+      this.rules.keep(filter);
+      return this;
+    },
+    remove: function(filter) {
+      this.rules.remove(filter);
+      return this;
+    },
+    escape: function(string4) {
+      return escapeMarkdown(string4);
+    }
+  };
+  function process4(parentNode) {
+    var self = this;
+    return reduce.call(parentNode.childNodes, function(output, node) {
+      node = new Node(node, self.options);
+      var replacement = "";
+      if (node.nodeType === 3) {
+        replacement = node.isCode ? node.nodeValue : self.escape(node.nodeValue);
+      } else if (node.nodeType === 1) {
+        replacement = replacementForNode.call(self, node);
+      }
+      return join3(output, replacement);
+    }, "");
+  }
+  function postProcess(output) {
+    var self = this;
+    this.rules.forEach(function(rule) {
+      if (typeof rule.append === "function") {
+        output = join3(output, rule.append(self.options));
+      }
+    });
+    return output.replace(/^[\t\r\n]+/, "").replace(/[\t\r\n\s]+$/, "");
+  }
+  function replacementForNode(node) {
+    var rule = this.rules.forNode(node);
+    var content = process4.call(this, node);
+    var whitespace = node.flankingWhitespace;
+    if (whitespace.leading || whitespace.trailing)
+      content = content.trim();
+    return whitespace.leading + rule.replacement(content, node, this.options) + whitespace.trailing;
+  }
+  function join3(output, replacement) {
+    var s1 = trimTrailingNewlines(output);
+    var s2 = trimLeadingNewlines(replacement);
+    var nls = Math.max(output.length - s1.length, replacement.length - s2.length);
+    var separator = `
+
+`.substring(0, nls);
+    return s1 + separator + s2;
+  }
+  function canConvert(input) {
+    return input != null && (typeof input === "string" || input.nodeType && (input.nodeType === 1 || input.nodeType === 9 || input.nodeType === 11));
+  }
+  module.exports = TurndownService;
 });
 
 // node_modules/zod/v4/core/core.js
@@ -29420,7 +30092,7 @@ class Server extends Protocol {
 }
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
-import process3 from "process";
+import process3 from "node:process";
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
 class ReadBuffer {
@@ -29511,12 +30183,12 @@ class StdioServerTransport {
 }
 
 // crypto.ts
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { createRequire } from "module";
-import { join as join2 } from "path";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createRequire as createRequire2 } from "node:module";
+import { join as join2 } from "node:path";
 
 // paths.ts
-import { join } from "path";
+import { join } from "node:path";
 var override = null;
 function storageHome() {
   return override ?? (process.env.AGENTPOST_HOME?.trim() || join(process.env.HOME ?? "~", ".claude", "channels", "agentpost"));
@@ -29538,7 +30210,7 @@ function inboxPath() {
 }
 
 // crypto.ts
-var require2 = createRequire(import.meta.url);
+var require2 = createRequire2(import.meta.url);
 var sodium = require2("libsodium-wrappers-sumo");
 await sodium.ready;
 function toBase64(data) {
@@ -29582,8 +30254,8 @@ function hmac(key, message) {
 }
 
 // file-store.ts
-import { chmodSync as chmodSync2, existsSync as existsSync2, mkdirSync as mkdirSync2, readFileSync as readFileSync2, renameSync, writeFileSync as writeFileSync2 } from "fs";
-import { dirname } from "path";
+import { chmodSync as chmodSync2, existsSync as existsSync2, mkdirSync as mkdirSync2, readFileSync as readFileSync2, renameSync, writeFileSync as writeFileSync2 } from "node:fs";
+import { dirname } from "node:path";
 function loadJsonFile(path, defaultValue) {
   if (!existsSync2(path))
     return defaultValue;
@@ -29660,8 +30332,8 @@ function takeUnread(limit) {
 }
 
 // email-parser.ts
-import { existsSync as existsSync3, mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "fs";
-import { join as join4 } from "path";
+import { existsSync as existsSync3, mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "node:fs";
+import { join as join3 } from "node:path";
 
 // node_modules/postal-mime/src/decode-strings.js
 var textEncoder = new TextEncoder;
@@ -29786,7 +30458,7 @@ function decodeWords(str) {
       }
       return match;
     }).replace(/(\?=)?__\x00JOIN\x00__(=\?([^?]+)\?[QqBb]\?)?/g, "").replace(/(=\?[^?]+\?[QqBb]\?[^?]*\?=)\s+(?==\?[^?]+\?[QqBb]\?[^?]*\?=)/g, "$1").replace(/=\?([\w_\-*]+)\?([QqBb])\?([^?]*)\?=/g, (m, charset, encoding, text) => decodeWord(charset, encoding, text));
-    if (joinString && result.indexOf("\uFFFD") >= 0) {
+    if (joinString && result.indexOf("�") >= 0) {
       joinString = false;
     } else {
       return result;
@@ -30278,2238 +30950,2238 @@ class MimeNode {
 
 // node_modules/postal-mime/src/html-entities.js
 var htmlEntities = {
-  "&AElig": "\xC6",
-  "&AElig;": "\xC6",
+  "&AElig": "Æ",
+  "&AElig;": "Æ",
   "&AMP": "&",
   "&AMP;": "&",
-  "&Aacute": "\xC1",
-  "&Aacute;": "\xC1",
-  "&Abreve;": "\u0102",
-  "&Acirc": "\xC2",
-  "&Acirc;": "\xC2",
-  "&Acy;": "\u0410",
+  "&Aacute": "Á",
+  "&Aacute;": "Á",
+  "&Abreve;": "Ă",
+  "&Acirc": "Â",
+  "&Acirc;": "Â",
+  "&Acy;": "А",
   "&Afr;": "\uD835\uDD04",
-  "&Agrave": "\xC0",
-  "&Agrave;": "\xC0",
-  "&Alpha;": "\u0391",
-  "&Amacr;": "\u0100",
-  "&And;": "\u2A53",
-  "&Aogon;": "\u0104",
+  "&Agrave": "À",
+  "&Agrave;": "À",
+  "&Alpha;": "Α",
+  "&Amacr;": "Ā",
+  "&And;": "⩓",
+  "&Aogon;": "Ą",
   "&Aopf;": "\uD835\uDD38",
-  "&ApplyFunction;": "\u2061",
-  "&Aring": "\xC5",
-  "&Aring;": "\xC5",
+  "&ApplyFunction;": "⁡",
+  "&Aring": "Å",
+  "&Aring;": "Å",
   "&Ascr;": "\uD835\uDC9C",
-  "&Assign;": "\u2254",
-  "&Atilde": "\xC3",
-  "&Atilde;": "\xC3",
-  "&Auml": "\xC4",
-  "&Auml;": "\xC4",
-  "&Backslash;": "\u2216",
-  "&Barv;": "\u2AE7",
-  "&Barwed;": "\u2306",
-  "&Bcy;": "\u0411",
-  "&Because;": "\u2235",
-  "&Bernoullis;": "\u212C",
-  "&Beta;": "\u0392",
+  "&Assign;": "≔",
+  "&Atilde": "Ã",
+  "&Atilde;": "Ã",
+  "&Auml": "Ä",
+  "&Auml;": "Ä",
+  "&Backslash;": "∖",
+  "&Barv;": "⫧",
+  "&Barwed;": "⌆",
+  "&Bcy;": "Б",
+  "&Because;": "∵",
+  "&Bernoullis;": "ℬ",
+  "&Beta;": "Β",
   "&Bfr;": "\uD835\uDD05",
   "&Bopf;": "\uD835\uDD39",
-  "&Breve;": "\u02D8",
-  "&Bscr;": "\u212C",
-  "&Bumpeq;": "\u224E",
-  "&CHcy;": "\u0427",
-  "&COPY": "\xA9",
-  "&COPY;": "\xA9",
-  "&Cacute;": "\u0106",
-  "&Cap;": "\u22D2",
-  "&CapitalDifferentialD;": "\u2145",
-  "&Cayleys;": "\u212D",
-  "&Ccaron;": "\u010C",
-  "&Ccedil": "\xC7",
-  "&Ccedil;": "\xC7",
-  "&Ccirc;": "\u0108",
-  "&Cconint;": "\u2230",
-  "&Cdot;": "\u010A",
-  "&Cedilla;": "\xB8",
-  "&CenterDot;": "\xB7",
-  "&Cfr;": "\u212D",
-  "&Chi;": "\u03A7",
-  "&CircleDot;": "\u2299",
-  "&CircleMinus;": "\u2296",
-  "&CirclePlus;": "\u2295",
-  "&CircleTimes;": "\u2297",
-  "&ClockwiseContourIntegral;": "\u2232",
-  "&CloseCurlyDoubleQuote;": "\u201D",
-  "&CloseCurlyQuote;": "\u2019",
-  "&Colon;": "\u2237",
-  "&Colone;": "\u2A74",
-  "&Congruent;": "\u2261",
-  "&Conint;": "\u222F",
-  "&ContourIntegral;": "\u222E",
-  "&Copf;": "\u2102",
-  "&Coproduct;": "\u2210",
-  "&CounterClockwiseContourIntegral;": "\u2233",
-  "&Cross;": "\u2A2F",
+  "&Breve;": "˘",
+  "&Bscr;": "ℬ",
+  "&Bumpeq;": "≎",
+  "&CHcy;": "Ч",
+  "&COPY": "©",
+  "&COPY;": "©",
+  "&Cacute;": "Ć",
+  "&Cap;": "⋒",
+  "&CapitalDifferentialD;": "ⅅ",
+  "&Cayleys;": "ℭ",
+  "&Ccaron;": "Č",
+  "&Ccedil": "Ç",
+  "&Ccedil;": "Ç",
+  "&Ccirc;": "Ĉ",
+  "&Cconint;": "∰",
+  "&Cdot;": "Ċ",
+  "&Cedilla;": "¸",
+  "&CenterDot;": "·",
+  "&Cfr;": "ℭ",
+  "&Chi;": "Χ",
+  "&CircleDot;": "⊙",
+  "&CircleMinus;": "⊖",
+  "&CirclePlus;": "⊕",
+  "&CircleTimes;": "⊗",
+  "&ClockwiseContourIntegral;": "∲",
+  "&CloseCurlyDoubleQuote;": "”",
+  "&CloseCurlyQuote;": "’",
+  "&Colon;": "∷",
+  "&Colone;": "⩴",
+  "&Congruent;": "≡",
+  "&Conint;": "∯",
+  "&ContourIntegral;": "∮",
+  "&Copf;": "ℂ",
+  "&Coproduct;": "∐",
+  "&CounterClockwiseContourIntegral;": "∳",
+  "&Cross;": "⨯",
   "&Cscr;": "\uD835\uDC9E",
-  "&Cup;": "\u22D3",
-  "&CupCap;": "\u224D",
-  "&DD;": "\u2145",
-  "&DDotrahd;": "\u2911",
-  "&DJcy;": "\u0402",
-  "&DScy;": "\u0405",
-  "&DZcy;": "\u040F",
-  "&Dagger;": "\u2021",
-  "&Darr;": "\u21A1",
-  "&Dashv;": "\u2AE4",
-  "&Dcaron;": "\u010E",
-  "&Dcy;": "\u0414",
-  "&Del;": "\u2207",
-  "&Delta;": "\u0394",
+  "&Cup;": "⋓",
+  "&CupCap;": "≍",
+  "&DD;": "ⅅ",
+  "&DDotrahd;": "⤑",
+  "&DJcy;": "Ђ",
+  "&DScy;": "Ѕ",
+  "&DZcy;": "Џ",
+  "&Dagger;": "‡",
+  "&Darr;": "↡",
+  "&Dashv;": "⫤",
+  "&Dcaron;": "Ď",
+  "&Dcy;": "Д",
+  "&Del;": "∇",
+  "&Delta;": "Δ",
   "&Dfr;": "\uD835\uDD07",
-  "&DiacriticalAcute;": "\xB4",
-  "&DiacriticalDot;": "\u02D9",
-  "&DiacriticalDoubleAcute;": "\u02DD",
+  "&DiacriticalAcute;": "´",
+  "&DiacriticalDot;": "˙",
+  "&DiacriticalDoubleAcute;": "˝",
   "&DiacriticalGrave;": "`",
-  "&DiacriticalTilde;": "\u02DC",
-  "&Diamond;": "\u22C4",
-  "&DifferentialD;": "\u2146",
+  "&DiacriticalTilde;": "˜",
+  "&Diamond;": "⋄",
+  "&DifferentialD;": "ⅆ",
   "&Dopf;": "\uD835\uDD3B",
-  "&Dot;": "\xA8",
-  "&DotDot;": "\u20DC",
-  "&DotEqual;": "\u2250",
-  "&DoubleContourIntegral;": "\u222F",
-  "&DoubleDot;": "\xA8",
-  "&DoubleDownArrow;": "\u21D3",
-  "&DoubleLeftArrow;": "\u21D0",
-  "&DoubleLeftRightArrow;": "\u21D4",
-  "&DoubleLeftTee;": "\u2AE4",
-  "&DoubleLongLeftArrow;": "\u27F8",
-  "&DoubleLongLeftRightArrow;": "\u27FA",
-  "&DoubleLongRightArrow;": "\u27F9",
-  "&DoubleRightArrow;": "\u21D2",
-  "&DoubleRightTee;": "\u22A8",
-  "&DoubleUpArrow;": "\u21D1",
-  "&DoubleUpDownArrow;": "\u21D5",
-  "&DoubleVerticalBar;": "\u2225",
-  "&DownArrow;": "\u2193",
-  "&DownArrowBar;": "\u2913",
-  "&DownArrowUpArrow;": "\u21F5",
-  "&DownBreve;": "\u0311",
-  "&DownLeftRightVector;": "\u2950",
-  "&DownLeftTeeVector;": "\u295E",
-  "&DownLeftVector;": "\u21BD",
-  "&DownLeftVectorBar;": "\u2956",
-  "&DownRightTeeVector;": "\u295F",
-  "&DownRightVector;": "\u21C1",
-  "&DownRightVectorBar;": "\u2957",
-  "&DownTee;": "\u22A4",
-  "&DownTeeArrow;": "\u21A7",
-  "&Downarrow;": "\u21D3",
+  "&Dot;": "¨",
+  "&DotDot;": "⃜",
+  "&DotEqual;": "≐",
+  "&DoubleContourIntegral;": "∯",
+  "&DoubleDot;": "¨",
+  "&DoubleDownArrow;": "⇓",
+  "&DoubleLeftArrow;": "⇐",
+  "&DoubleLeftRightArrow;": "⇔",
+  "&DoubleLeftTee;": "⫤",
+  "&DoubleLongLeftArrow;": "⟸",
+  "&DoubleLongLeftRightArrow;": "⟺",
+  "&DoubleLongRightArrow;": "⟹",
+  "&DoubleRightArrow;": "⇒",
+  "&DoubleRightTee;": "⊨",
+  "&DoubleUpArrow;": "⇑",
+  "&DoubleUpDownArrow;": "⇕",
+  "&DoubleVerticalBar;": "∥",
+  "&DownArrow;": "↓",
+  "&DownArrowBar;": "⤓",
+  "&DownArrowUpArrow;": "⇵",
+  "&DownBreve;": "̑",
+  "&DownLeftRightVector;": "⥐",
+  "&DownLeftTeeVector;": "⥞",
+  "&DownLeftVector;": "↽",
+  "&DownLeftVectorBar;": "⥖",
+  "&DownRightTeeVector;": "⥟",
+  "&DownRightVector;": "⇁",
+  "&DownRightVectorBar;": "⥗",
+  "&DownTee;": "⊤",
+  "&DownTeeArrow;": "↧",
+  "&Downarrow;": "⇓",
   "&Dscr;": "\uD835\uDC9F",
-  "&Dstrok;": "\u0110",
-  "&ENG;": "\u014A",
-  "&ETH": "\xD0",
-  "&ETH;": "\xD0",
-  "&Eacute": "\xC9",
-  "&Eacute;": "\xC9",
-  "&Ecaron;": "\u011A",
-  "&Ecirc": "\xCA",
-  "&Ecirc;": "\xCA",
-  "&Ecy;": "\u042D",
-  "&Edot;": "\u0116",
+  "&Dstrok;": "Đ",
+  "&ENG;": "Ŋ",
+  "&ETH": "Ð",
+  "&ETH;": "Ð",
+  "&Eacute": "É",
+  "&Eacute;": "É",
+  "&Ecaron;": "Ě",
+  "&Ecirc": "Ê",
+  "&Ecirc;": "Ê",
+  "&Ecy;": "Э",
+  "&Edot;": "Ė",
   "&Efr;": "\uD835\uDD08",
-  "&Egrave": "\xC8",
-  "&Egrave;": "\xC8",
-  "&Element;": "\u2208",
-  "&Emacr;": "\u0112",
-  "&EmptySmallSquare;": "\u25FB",
-  "&EmptyVerySmallSquare;": "\u25AB",
-  "&Eogon;": "\u0118",
+  "&Egrave": "È",
+  "&Egrave;": "È",
+  "&Element;": "∈",
+  "&Emacr;": "Ē",
+  "&EmptySmallSquare;": "◻",
+  "&EmptyVerySmallSquare;": "▫",
+  "&Eogon;": "Ę",
   "&Eopf;": "\uD835\uDD3C",
-  "&Epsilon;": "\u0395",
-  "&Equal;": "\u2A75",
-  "&EqualTilde;": "\u2242",
-  "&Equilibrium;": "\u21CC",
-  "&Escr;": "\u2130",
-  "&Esim;": "\u2A73",
-  "&Eta;": "\u0397",
-  "&Euml": "\xCB",
-  "&Euml;": "\xCB",
-  "&Exists;": "\u2203",
-  "&ExponentialE;": "\u2147",
-  "&Fcy;": "\u0424",
+  "&Epsilon;": "Ε",
+  "&Equal;": "⩵",
+  "&EqualTilde;": "≂",
+  "&Equilibrium;": "⇌",
+  "&Escr;": "ℰ",
+  "&Esim;": "⩳",
+  "&Eta;": "Η",
+  "&Euml": "Ë",
+  "&Euml;": "Ë",
+  "&Exists;": "∃",
+  "&ExponentialE;": "ⅇ",
+  "&Fcy;": "Ф",
   "&Ffr;": "\uD835\uDD09",
-  "&FilledSmallSquare;": "\u25FC",
-  "&FilledVerySmallSquare;": "\u25AA",
+  "&FilledSmallSquare;": "◼",
+  "&FilledVerySmallSquare;": "▪",
   "&Fopf;": "\uD835\uDD3D",
-  "&ForAll;": "\u2200",
-  "&Fouriertrf;": "\u2131",
-  "&Fscr;": "\u2131",
-  "&GJcy;": "\u0403",
+  "&ForAll;": "∀",
+  "&Fouriertrf;": "ℱ",
+  "&Fscr;": "ℱ",
+  "&GJcy;": "Ѓ",
   "&GT": ">",
   "&GT;": ">",
-  "&Gamma;": "\u0393",
-  "&Gammad;": "\u03DC",
-  "&Gbreve;": "\u011E",
-  "&Gcedil;": "\u0122",
-  "&Gcirc;": "\u011C",
-  "&Gcy;": "\u0413",
-  "&Gdot;": "\u0120",
+  "&Gamma;": "Γ",
+  "&Gammad;": "Ϝ",
+  "&Gbreve;": "Ğ",
+  "&Gcedil;": "Ģ",
+  "&Gcirc;": "Ĝ",
+  "&Gcy;": "Г",
+  "&Gdot;": "Ġ",
   "&Gfr;": "\uD835\uDD0A",
-  "&Gg;": "\u22D9",
+  "&Gg;": "⋙",
   "&Gopf;": "\uD835\uDD3E",
-  "&GreaterEqual;": "\u2265",
-  "&GreaterEqualLess;": "\u22DB",
-  "&GreaterFullEqual;": "\u2267",
-  "&GreaterGreater;": "\u2AA2",
-  "&GreaterLess;": "\u2277",
-  "&GreaterSlantEqual;": "\u2A7E",
-  "&GreaterTilde;": "\u2273",
+  "&GreaterEqual;": "≥",
+  "&GreaterEqualLess;": "⋛",
+  "&GreaterFullEqual;": "≧",
+  "&GreaterGreater;": "⪢",
+  "&GreaterLess;": "≷",
+  "&GreaterSlantEqual;": "⩾",
+  "&GreaterTilde;": "≳",
   "&Gscr;": "\uD835\uDCA2",
-  "&Gt;": "\u226B",
-  "&HARDcy;": "\u042A",
-  "&Hacek;": "\u02C7",
+  "&Gt;": "≫",
+  "&HARDcy;": "Ъ",
+  "&Hacek;": "ˇ",
   "&Hat;": "^",
-  "&Hcirc;": "\u0124",
-  "&Hfr;": "\u210C",
-  "&HilbertSpace;": "\u210B",
-  "&Hopf;": "\u210D",
-  "&HorizontalLine;": "\u2500",
-  "&Hscr;": "\u210B",
-  "&Hstrok;": "\u0126",
-  "&HumpDownHump;": "\u224E",
-  "&HumpEqual;": "\u224F",
-  "&IEcy;": "\u0415",
-  "&IJlig;": "\u0132",
-  "&IOcy;": "\u0401",
-  "&Iacute": "\xCD",
-  "&Iacute;": "\xCD",
-  "&Icirc": "\xCE",
-  "&Icirc;": "\xCE",
-  "&Icy;": "\u0418",
-  "&Idot;": "\u0130",
-  "&Ifr;": "\u2111",
-  "&Igrave": "\xCC",
-  "&Igrave;": "\xCC",
-  "&Im;": "\u2111",
-  "&Imacr;": "\u012A",
-  "&ImaginaryI;": "\u2148",
-  "&Implies;": "\u21D2",
-  "&Int;": "\u222C",
-  "&Integral;": "\u222B",
-  "&Intersection;": "\u22C2",
-  "&InvisibleComma;": "\u2063",
-  "&InvisibleTimes;": "\u2062",
-  "&Iogon;": "\u012E",
+  "&Hcirc;": "Ĥ",
+  "&Hfr;": "ℌ",
+  "&HilbertSpace;": "ℋ",
+  "&Hopf;": "ℍ",
+  "&HorizontalLine;": "─",
+  "&Hscr;": "ℋ",
+  "&Hstrok;": "Ħ",
+  "&HumpDownHump;": "≎",
+  "&HumpEqual;": "≏",
+  "&IEcy;": "Е",
+  "&IJlig;": "Ĳ",
+  "&IOcy;": "Ё",
+  "&Iacute": "Í",
+  "&Iacute;": "Í",
+  "&Icirc": "Î",
+  "&Icirc;": "Î",
+  "&Icy;": "И",
+  "&Idot;": "İ",
+  "&Ifr;": "ℑ",
+  "&Igrave": "Ì",
+  "&Igrave;": "Ì",
+  "&Im;": "ℑ",
+  "&Imacr;": "Ī",
+  "&ImaginaryI;": "ⅈ",
+  "&Implies;": "⇒",
+  "&Int;": "∬",
+  "&Integral;": "∫",
+  "&Intersection;": "⋂",
+  "&InvisibleComma;": "⁣",
+  "&InvisibleTimes;": "⁢",
+  "&Iogon;": "Į",
   "&Iopf;": "\uD835\uDD40",
-  "&Iota;": "\u0399",
-  "&Iscr;": "\u2110",
-  "&Itilde;": "\u0128",
-  "&Iukcy;": "\u0406",
-  "&Iuml": "\xCF",
-  "&Iuml;": "\xCF",
-  "&Jcirc;": "\u0134",
-  "&Jcy;": "\u0419",
+  "&Iota;": "Ι",
+  "&Iscr;": "ℐ",
+  "&Itilde;": "Ĩ",
+  "&Iukcy;": "І",
+  "&Iuml": "Ï",
+  "&Iuml;": "Ï",
+  "&Jcirc;": "Ĵ",
+  "&Jcy;": "Й",
   "&Jfr;": "\uD835\uDD0D",
   "&Jopf;": "\uD835\uDD41",
   "&Jscr;": "\uD835\uDCA5",
-  "&Jsercy;": "\u0408",
-  "&Jukcy;": "\u0404",
-  "&KHcy;": "\u0425",
-  "&KJcy;": "\u040C",
-  "&Kappa;": "\u039A",
-  "&Kcedil;": "\u0136",
-  "&Kcy;": "\u041A",
+  "&Jsercy;": "Ј",
+  "&Jukcy;": "Є",
+  "&KHcy;": "Х",
+  "&KJcy;": "Ќ",
+  "&Kappa;": "Κ",
+  "&Kcedil;": "Ķ",
+  "&Kcy;": "К",
   "&Kfr;": "\uD835\uDD0E",
   "&Kopf;": "\uD835\uDD42",
   "&Kscr;": "\uD835\uDCA6",
-  "&LJcy;": "\u0409",
+  "&LJcy;": "Љ",
   "&LT": "<",
   "&LT;": "<",
-  "&Lacute;": "\u0139",
-  "&Lambda;": "\u039B",
-  "&Lang;": "\u27EA",
-  "&Laplacetrf;": "\u2112",
-  "&Larr;": "\u219E",
-  "&Lcaron;": "\u013D",
-  "&Lcedil;": "\u013B",
-  "&Lcy;": "\u041B",
-  "&LeftAngleBracket;": "\u27E8",
-  "&LeftArrow;": "\u2190",
-  "&LeftArrowBar;": "\u21E4",
-  "&LeftArrowRightArrow;": "\u21C6",
-  "&LeftCeiling;": "\u2308",
-  "&LeftDoubleBracket;": "\u27E6",
-  "&LeftDownTeeVector;": "\u2961",
-  "&LeftDownVector;": "\u21C3",
-  "&LeftDownVectorBar;": "\u2959",
-  "&LeftFloor;": "\u230A",
-  "&LeftRightArrow;": "\u2194",
-  "&LeftRightVector;": "\u294E",
-  "&LeftTee;": "\u22A3",
-  "&LeftTeeArrow;": "\u21A4",
-  "&LeftTeeVector;": "\u295A",
-  "&LeftTriangle;": "\u22B2",
-  "&LeftTriangleBar;": "\u29CF",
-  "&LeftTriangleEqual;": "\u22B4",
-  "&LeftUpDownVector;": "\u2951",
-  "&LeftUpTeeVector;": "\u2960",
-  "&LeftUpVector;": "\u21BF",
-  "&LeftUpVectorBar;": "\u2958",
-  "&LeftVector;": "\u21BC",
-  "&LeftVectorBar;": "\u2952",
-  "&Leftarrow;": "\u21D0",
-  "&Leftrightarrow;": "\u21D4",
-  "&LessEqualGreater;": "\u22DA",
-  "&LessFullEqual;": "\u2266",
-  "&LessGreater;": "\u2276",
-  "&LessLess;": "\u2AA1",
-  "&LessSlantEqual;": "\u2A7D",
-  "&LessTilde;": "\u2272",
+  "&Lacute;": "Ĺ",
+  "&Lambda;": "Λ",
+  "&Lang;": "⟪",
+  "&Laplacetrf;": "ℒ",
+  "&Larr;": "↞",
+  "&Lcaron;": "Ľ",
+  "&Lcedil;": "Ļ",
+  "&Lcy;": "Л",
+  "&LeftAngleBracket;": "⟨",
+  "&LeftArrow;": "←",
+  "&LeftArrowBar;": "⇤",
+  "&LeftArrowRightArrow;": "⇆",
+  "&LeftCeiling;": "⌈",
+  "&LeftDoubleBracket;": "⟦",
+  "&LeftDownTeeVector;": "⥡",
+  "&LeftDownVector;": "⇃",
+  "&LeftDownVectorBar;": "⥙",
+  "&LeftFloor;": "⌊",
+  "&LeftRightArrow;": "↔",
+  "&LeftRightVector;": "⥎",
+  "&LeftTee;": "⊣",
+  "&LeftTeeArrow;": "↤",
+  "&LeftTeeVector;": "⥚",
+  "&LeftTriangle;": "⊲",
+  "&LeftTriangleBar;": "⧏",
+  "&LeftTriangleEqual;": "⊴",
+  "&LeftUpDownVector;": "⥑",
+  "&LeftUpTeeVector;": "⥠",
+  "&LeftUpVector;": "↿",
+  "&LeftUpVectorBar;": "⥘",
+  "&LeftVector;": "↼",
+  "&LeftVectorBar;": "⥒",
+  "&Leftarrow;": "⇐",
+  "&Leftrightarrow;": "⇔",
+  "&LessEqualGreater;": "⋚",
+  "&LessFullEqual;": "≦",
+  "&LessGreater;": "≶",
+  "&LessLess;": "⪡",
+  "&LessSlantEqual;": "⩽",
+  "&LessTilde;": "≲",
   "&Lfr;": "\uD835\uDD0F",
-  "&Ll;": "\u22D8",
-  "&Lleftarrow;": "\u21DA",
-  "&Lmidot;": "\u013F",
-  "&LongLeftArrow;": "\u27F5",
-  "&LongLeftRightArrow;": "\u27F7",
-  "&LongRightArrow;": "\u27F6",
-  "&Longleftarrow;": "\u27F8",
-  "&Longleftrightarrow;": "\u27FA",
-  "&Longrightarrow;": "\u27F9",
+  "&Ll;": "⋘",
+  "&Lleftarrow;": "⇚",
+  "&Lmidot;": "Ŀ",
+  "&LongLeftArrow;": "⟵",
+  "&LongLeftRightArrow;": "⟷",
+  "&LongRightArrow;": "⟶",
+  "&Longleftarrow;": "⟸",
+  "&Longleftrightarrow;": "⟺",
+  "&Longrightarrow;": "⟹",
   "&Lopf;": "\uD835\uDD43",
-  "&LowerLeftArrow;": "\u2199",
-  "&LowerRightArrow;": "\u2198",
-  "&Lscr;": "\u2112",
-  "&Lsh;": "\u21B0",
-  "&Lstrok;": "\u0141",
-  "&Lt;": "\u226A",
-  "&Map;": "\u2905",
-  "&Mcy;": "\u041C",
-  "&MediumSpace;": "\u205F",
-  "&Mellintrf;": "\u2133",
+  "&LowerLeftArrow;": "↙",
+  "&LowerRightArrow;": "↘",
+  "&Lscr;": "ℒ",
+  "&Lsh;": "↰",
+  "&Lstrok;": "Ł",
+  "&Lt;": "≪",
+  "&Map;": "⤅",
+  "&Mcy;": "М",
+  "&MediumSpace;": " ",
+  "&Mellintrf;": "ℳ",
   "&Mfr;": "\uD835\uDD10",
-  "&MinusPlus;": "\u2213",
+  "&MinusPlus;": "∓",
   "&Mopf;": "\uD835\uDD44",
-  "&Mscr;": "\u2133",
-  "&Mu;": "\u039C",
-  "&NJcy;": "\u040A",
-  "&Nacute;": "\u0143",
-  "&Ncaron;": "\u0147",
-  "&Ncedil;": "\u0145",
-  "&Ncy;": "\u041D",
-  "&NegativeMediumSpace;": "\u200B",
-  "&NegativeThickSpace;": "\u200B",
-  "&NegativeThinSpace;": "\u200B",
-  "&NegativeVeryThinSpace;": "\u200B",
-  "&NestedGreaterGreater;": "\u226B",
-  "&NestedLessLess;": "\u226A",
+  "&Mscr;": "ℳ",
+  "&Mu;": "Μ",
+  "&NJcy;": "Њ",
+  "&Nacute;": "Ń",
+  "&Ncaron;": "Ň",
+  "&Ncedil;": "Ņ",
+  "&Ncy;": "Н",
+  "&NegativeMediumSpace;": "​",
+  "&NegativeThickSpace;": "​",
+  "&NegativeThinSpace;": "​",
+  "&NegativeVeryThinSpace;": "​",
+  "&NestedGreaterGreater;": "≫",
+  "&NestedLessLess;": "≪",
   "&NewLine;": `
 `,
   "&Nfr;": "\uD835\uDD11",
-  "&NoBreak;": "\u2060",
-  "&NonBreakingSpace;": "\xA0",
-  "&Nopf;": "\u2115",
-  "&Not;": "\u2AEC",
-  "&NotCongruent;": "\u2262",
-  "&NotCupCap;": "\u226D",
-  "&NotDoubleVerticalBar;": "\u2226",
-  "&NotElement;": "\u2209",
-  "&NotEqual;": "\u2260",
-  "&NotEqualTilde;": "\u2242\u0338",
-  "&NotExists;": "\u2204",
-  "&NotGreater;": "\u226F",
-  "&NotGreaterEqual;": "\u2271",
-  "&NotGreaterFullEqual;": "\u2267\u0338",
-  "&NotGreaterGreater;": "\u226B\u0338",
-  "&NotGreaterLess;": "\u2279",
-  "&NotGreaterSlantEqual;": "\u2A7E\u0338",
-  "&NotGreaterTilde;": "\u2275",
-  "&NotHumpDownHump;": "\u224E\u0338",
-  "&NotHumpEqual;": "\u224F\u0338",
-  "&NotLeftTriangle;": "\u22EA",
-  "&NotLeftTriangleBar;": "\u29CF\u0338",
-  "&NotLeftTriangleEqual;": "\u22EC",
-  "&NotLess;": "\u226E",
-  "&NotLessEqual;": "\u2270",
-  "&NotLessGreater;": "\u2278",
-  "&NotLessLess;": "\u226A\u0338",
-  "&NotLessSlantEqual;": "\u2A7D\u0338",
-  "&NotLessTilde;": "\u2274",
-  "&NotNestedGreaterGreater;": "\u2AA2\u0338",
-  "&NotNestedLessLess;": "\u2AA1\u0338",
-  "&NotPrecedes;": "\u2280",
-  "&NotPrecedesEqual;": "\u2AAF\u0338",
-  "&NotPrecedesSlantEqual;": "\u22E0",
-  "&NotReverseElement;": "\u220C",
-  "&NotRightTriangle;": "\u22EB",
-  "&NotRightTriangleBar;": "\u29D0\u0338",
-  "&NotRightTriangleEqual;": "\u22ED",
-  "&NotSquareSubset;": "\u228F\u0338",
-  "&NotSquareSubsetEqual;": "\u22E2",
-  "&NotSquareSuperset;": "\u2290\u0338",
-  "&NotSquareSupersetEqual;": "\u22E3",
-  "&NotSubset;": "\u2282\u20D2",
-  "&NotSubsetEqual;": "\u2288",
-  "&NotSucceeds;": "\u2281",
-  "&NotSucceedsEqual;": "\u2AB0\u0338",
-  "&NotSucceedsSlantEqual;": "\u22E1",
-  "&NotSucceedsTilde;": "\u227F\u0338",
-  "&NotSuperset;": "\u2283\u20D2",
-  "&NotSupersetEqual;": "\u2289",
-  "&NotTilde;": "\u2241",
-  "&NotTildeEqual;": "\u2244",
-  "&NotTildeFullEqual;": "\u2247",
-  "&NotTildeTilde;": "\u2249",
-  "&NotVerticalBar;": "\u2224",
+  "&NoBreak;": "⁠",
+  "&NonBreakingSpace;": " ",
+  "&Nopf;": "ℕ",
+  "&Not;": "⫬",
+  "&NotCongruent;": "≢",
+  "&NotCupCap;": "≭",
+  "&NotDoubleVerticalBar;": "∦",
+  "&NotElement;": "∉",
+  "&NotEqual;": "≠",
+  "&NotEqualTilde;": "≂̸",
+  "&NotExists;": "∄",
+  "&NotGreater;": "≯",
+  "&NotGreaterEqual;": "≱",
+  "&NotGreaterFullEqual;": "≧̸",
+  "&NotGreaterGreater;": "≫̸",
+  "&NotGreaterLess;": "≹",
+  "&NotGreaterSlantEqual;": "⩾̸",
+  "&NotGreaterTilde;": "≵",
+  "&NotHumpDownHump;": "≎̸",
+  "&NotHumpEqual;": "≏̸",
+  "&NotLeftTriangle;": "⋪",
+  "&NotLeftTriangleBar;": "⧏̸",
+  "&NotLeftTriangleEqual;": "⋬",
+  "&NotLess;": "≮",
+  "&NotLessEqual;": "≰",
+  "&NotLessGreater;": "≸",
+  "&NotLessLess;": "≪̸",
+  "&NotLessSlantEqual;": "⩽̸",
+  "&NotLessTilde;": "≴",
+  "&NotNestedGreaterGreater;": "⪢̸",
+  "&NotNestedLessLess;": "⪡̸",
+  "&NotPrecedes;": "⊀",
+  "&NotPrecedesEqual;": "⪯̸",
+  "&NotPrecedesSlantEqual;": "⋠",
+  "&NotReverseElement;": "∌",
+  "&NotRightTriangle;": "⋫",
+  "&NotRightTriangleBar;": "⧐̸",
+  "&NotRightTriangleEqual;": "⋭",
+  "&NotSquareSubset;": "⊏̸",
+  "&NotSquareSubsetEqual;": "⋢",
+  "&NotSquareSuperset;": "⊐̸",
+  "&NotSquareSupersetEqual;": "⋣",
+  "&NotSubset;": "⊂⃒",
+  "&NotSubsetEqual;": "⊈",
+  "&NotSucceeds;": "⊁",
+  "&NotSucceedsEqual;": "⪰̸",
+  "&NotSucceedsSlantEqual;": "⋡",
+  "&NotSucceedsTilde;": "≿̸",
+  "&NotSuperset;": "⊃⃒",
+  "&NotSupersetEqual;": "⊉",
+  "&NotTilde;": "≁",
+  "&NotTildeEqual;": "≄",
+  "&NotTildeFullEqual;": "≇",
+  "&NotTildeTilde;": "≉",
+  "&NotVerticalBar;": "∤",
   "&Nscr;": "\uD835\uDCA9",
-  "&Ntilde": "\xD1",
-  "&Ntilde;": "\xD1",
-  "&Nu;": "\u039D",
-  "&OElig;": "\u0152",
-  "&Oacute": "\xD3",
-  "&Oacute;": "\xD3",
-  "&Ocirc": "\xD4",
-  "&Ocirc;": "\xD4",
-  "&Ocy;": "\u041E",
-  "&Odblac;": "\u0150",
+  "&Ntilde": "Ñ",
+  "&Ntilde;": "Ñ",
+  "&Nu;": "Ν",
+  "&OElig;": "Œ",
+  "&Oacute": "Ó",
+  "&Oacute;": "Ó",
+  "&Ocirc": "Ô",
+  "&Ocirc;": "Ô",
+  "&Ocy;": "О",
+  "&Odblac;": "Ő",
   "&Ofr;": "\uD835\uDD12",
-  "&Ograve": "\xD2",
-  "&Ograve;": "\xD2",
-  "&Omacr;": "\u014C",
-  "&Omega;": "\u03A9",
-  "&Omicron;": "\u039F",
+  "&Ograve": "Ò",
+  "&Ograve;": "Ò",
+  "&Omacr;": "Ō",
+  "&Omega;": "Ω",
+  "&Omicron;": "Ο",
   "&Oopf;": "\uD835\uDD46",
-  "&OpenCurlyDoubleQuote;": "\u201C",
-  "&OpenCurlyQuote;": "\u2018",
-  "&Or;": "\u2A54",
+  "&OpenCurlyDoubleQuote;": "“",
+  "&OpenCurlyQuote;": "‘",
+  "&Or;": "⩔",
   "&Oscr;": "\uD835\uDCAA",
-  "&Oslash": "\xD8",
-  "&Oslash;": "\xD8",
-  "&Otilde": "\xD5",
-  "&Otilde;": "\xD5",
-  "&Otimes;": "\u2A37",
-  "&Ouml": "\xD6",
-  "&Ouml;": "\xD6",
-  "&OverBar;": "\u203E",
-  "&OverBrace;": "\u23DE",
-  "&OverBracket;": "\u23B4",
-  "&OverParenthesis;": "\u23DC",
-  "&PartialD;": "\u2202",
-  "&Pcy;": "\u041F",
+  "&Oslash": "Ø",
+  "&Oslash;": "Ø",
+  "&Otilde": "Õ",
+  "&Otilde;": "Õ",
+  "&Otimes;": "⨷",
+  "&Ouml": "Ö",
+  "&Ouml;": "Ö",
+  "&OverBar;": "‾",
+  "&OverBrace;": "⏞",
+  "&OverBracket;": "⎴",
+  "&OverParenthesis;": "⏜",
+  "&PartialD;": "∂",
+  "&Pcy;": "П",
   "&Pfr;": "\uD835\uDD13",
-  "&Phi;": "\u03A6",
-  "&Pi;": "\u03A0",
-  "&PlusMinus;": "\xB1",
-  "&Poincareplane;": "\u210C",
-  "&Popf;": "\u2119",
-  "&Pr;": "\u2ABB",
-  "&Precedes;": "\u227A",
-  "&PrecedesEqual;": "\u2AAF",
-  "&PrecedesSlantEqual;": "\u227C",
-  "&PrecedesTilde;": "\u227E",
-  "&Prime;": "\u2033",
-  "&Product;": "\u220F",
-  "&Proportion;": "\u2237",
-  "&Proportional;": "\u221D",
+  "&Phi;": "Φ",
+  "&Pi;": "Π",
+  "&PlusMinus;": "±",
+  "&Poincareplane;": "ℌ",
+  "&Popf;": "ℙ",
+  "&Pr;": "⪻",
+  "&Precedes;": "≺",
+  "&PrecedesEqual;": "⪯",
+  "&PrecedesSlantEqual;": "≼",
+  "&PrecedesTilde;": "≾",
+  "&Prime;": "″",
+  "&Product;": "∏",
+  "&Proportion;": "∷",
+  "&Proportional;": "∝",
   "&Pscr;": "\uD835\uDCAB",
-  "&Psi;": "\u03A8",
+  "&Psi;": "Ψ",
   "&QUOT": '"',
   "&QUOT;": '"',
   "&Qfr;": "\uD835\uDD14",
-  "&Qopf;": "\u211A",
+  "&Qopf;": "ℚ",
   "&Qscr;": "\uD835\uDCAC",
-  "&RBarr;": "\u2910",
-  "&REG": "\xAE",
-  "&REG;": "\xAE",
-  "&Racute;": "\u0154",
-  "&Rang;": "\u27EB",
-  "&Rarr;": "\u21A0",
-  "&Rarrtl;": "\u2916",
-  "&Rcaron;": "\u0158",
-  "&Rcedil;": "\u0156",
-  "&Rcy;": "\u0420",
-  "&Re;": "\u211C",
-  "&ReverseElement;": "\u220B",
-  "&ReverseEquilibrium;": "\u21CB",
-  "&ReverseUpEquilibrium;": "\u296F",
-  "&Rfr;": "\u211C",
-  "&Rho;": "\u03A1",
-  "&RightAngleBracket;": "\u27E9",
-  "&RightArrow;": "\u2192",
-  "&RightArrowBar;": "\u21E5",
-  "&RightArrowLeftArrow;": "\u21C4",
-  "&RightCeiling;": "\u2309",
-  "&RightDoubleBracket;": "\u27E7",
-  "&RightDownTeeVector;": "\u295D",
-  "&RightDownVector;": "\u21C2",
-  "&RightDownVectorBar;": "\u2955",
-  "&RightFloor;": "\u230B",
-  "&RightTee;": "\u22A2",
-  "&RightTeeArrow;": "\u21A6",
-  "&RightTeeVector;": "\u295B",
-  "&RightTriangle;": "\u22B3",
-  "&RightTriangleBar;": "\u29D0",
-  "&RightTriangleEqual;": "\u22B5",
-  "&RightUpDownVector;": "\u294F",
-  "&RightUpTeeVector;": "\u295C",
-  "&RightUpVector;": "\u21BE",
-  "&RightUpVectorBar;": "\u2954",
-  "&RightVector;": "\u21C0",
-  "&RightVectorBar;": "\u2953",
-  "&Rightarrow;": "\u21D2",
-  "&Ropf;": "\u211D",
-  "&RoundImplies;": "\u2970",
-  "&Rrightarrow;": "\u21DB",
-  "&Rscr;": "\u211B",
-  "&Rsh;": "\u21B1",
-  "&RuleDelayed;": "\u29F4",
-  "&SHCHcy;": "\u0429",
-  "&SHcy;": "\u0428",
-  "&SOFTcy;": "\u042C",
-  "&Sacute;": "\u015A",
-  "&Sc;": "\u2ABC",
-  "&Scaron;": "\u0160",
-  "&Scedil;": "\u015E",
-  "&Scirc;": "\u015C",
-  "&Scy;": "\u0421",
+  "&RBarr;": "⤐",
+  "&REG": "®",
+  "&REG;": "®",
+  "&Racute;": "Ŕ",
+  "&Rang;": "⟫",
+  "&Rarr;": "↠",
+  "&Rarrtl;": "⤖",
+  "&Rcaron;": "Ř",
+  "&Rcedil;": "Ŗ",
+  "&Rcy;": "Р",
+  "&Re;": "ℜ",
+  "&ReverseElement;": "∋",
+  "&ReverseEquilibrium;": "⇋",
+  "&ReverseUpEquilibrium;": "⥯",
+  "&Rfr;": "ℜ",
+  "&Rho;": "Ρ",
+  "&RightAngleBracket;": "⟩",
+  "&RightArrow;": "→",
+  "&RightArrowBar;": "⇥",
+  "&RightArrowLeftArrow;": "⇄",
+  "&RightCeiling;": "⌉",
+  "&RightDoubleBracket;": "⟧",
+  "&RightDownTeeVector;": "⥝",
+  "&RightDownVector;": "⇂",
+  "&RightDownVectorBar;": "⥕",
+  "&RightFloor;": "⌋",
+  "&RightTee;": "⊢",
+  "&RightTeeArrow;": "↦",
+  "&RightTeeVector;": "⥛",
+  "&RightTriangle;": "⊳",
+  "&RightTriangleBar;": "⧐",
+  "&RightTriangleEqual;": "⊵",
+  "&RightUpDownVector;": "⥏",
+  "&RightUpTeeVector;": "⥜",
+  "&RightUpVector;": "↾",
+  "&RightUpVectorBar;": "⥔",
+  "&RightVector;": "⇀",
+  "&RightVectorBar;": "⥓",
+  "&Rightarrow;": "⇒",
+  "&Ropf;": "ℝ",
+  "&RoundImplies;": "⥰",
+  "&Rrightarrow;": "⇛",
+  "&Rscr;": "ℛ",
+  "&Rsh;": "↱",
+  "&RuleDelayed;": "⧴",
+  "&SHCHcy;": "Щ",
+  "&SHcy;": "Ш",
+  "&SOFTcy;": "Ь",
+  "&Sacute;": "Ś",
+  "&Sc;": "⪼",
+  "&Scaron;": "Š",
+  "&Scedil;": "Ş",
+  "&Scirc;": "Ŝ",
+  "&Scy;": "С",
   "&Sfr;": "\uD835\uDD16",
-  "&ShortDownArrow;": "\u2193",
-  "&ShortLeftArrow;": "\u2190",
-  "&ShortRightArrow;": "\u2192",
-  "&ShortUpArrow;": "\u2191",
-  "&Sigma;": "\u03A3",
-  "&SmallCircle;": "\u2218",
+  "&ShortDownArrow;": "↓",
+  "&ShortLeftArrow;": "←",
+  "&ShortRightArrow;": "→",
+  "&ShortUpArrow;": "↑",
+  "&Sigma;": "Σ",
+  "&SmallCircle;": "∘",
   "&Sopf;": "\uD835\uDD4A",
-  "&Sqrt;": "\u221A",
-  "&Square;": "\u25A1",
-  "&SquareIntersection;": "\u2293",
-  "&SquareSubset;": "\u228F",
-  "&SquareSubsetEqual;": "\u2291",
-  "&SquareSuperset;": "\u2290",
-  "&SquareSupersetEqual;": "\u2292",
-  "&SquareUnion;": "\u2294",
+  "&Sqrt;": "√",
+  "&Square;": "□",
+  "&SquareIntersection;": "⊓",
+  "&SquareSubset;": "⊏",
+  "&SquareSubsetEqual;": "⊑",
+  "&SquareSuperset;": "⊐",
+  "&SquareSupersetEqual;": "⊒",
+  "&SquareUnion;": "⊔",
   "&Sscr;": "\uD835\uDCAE",
-  "&Star;": "\u22C6",
-  "&Sub;": "\u22D0",
-  "&Subset;": "\u22D0",
-  "&SubsetEqual;": "\u2286",
-  "&Succeeds;": "\u227B",
-  "&SucceedsEqual;": "\u2AB0",
-  "&SucceedsSlantEqual;": "\u227D",
-  "&SucceedsTilde;": "\u227F",
-  "&SuchThat;": "\u220B",
-  "&Sum;": "\u2211",
-  "&Sup;": "\u22D1",
-  "&Superset;": "\u2283",
-  "&SupersetEqual;": "\u2287",
-  "&Supset;": "\u22D1",
-  "&THORN": "\xDE",
-  "&THORN;": "\xDE",
-  "&TRADE;": "\u2122",
-  "&TSHcy;": "\u040B",
-  "&TScy;": "\u0426",
+  "&Star;": "⋆",
+  "&Sub;": "⋐",
+  "&Subset;": "⋐",
+  "&SubsetEqual;": "⊆",
+  "&Succeeds;": "≻",
+  "&SucceedsEqual;": "⪰",
+  "&SucceedsSlantEqual;": "≽",
+  "&SucceedsTilde;": "≿",
+  "&SuchThat;": "∋",
+  "&Sum;": "∑",
+  "&Sup;": "⋑",
+  "&Superset;": "⊃",
+  "&SupersetEqual;": "⊇",
+  "&Supset;": "⋑",
+  "&THORN": "Þ",
+  "&THORN;": "Þ",
+  "&TRADE;": "™",
+  "&TSHcy;": "Ћ",
+  "&TScy;": "Ц",
   "&Tab;": "\t",
-  "&Tau;": "\u03A4",
-  "&Tcaron;": "\u0164",
-  "&Tcedil;": "\u0162",
-  "&Tcy;": "\u0422",
+  "&Tau;": "Τ",
+  "&Tcaron;": "Ť",
+  "&Tcedil;": "Ţ",
+  "&Tcy;": "Т",
   "&Tfr;": "\uD835\uDD17",
-  "&Therefore;": "\u2234",
-  "&Theta;": "\u0398",
-  "&ThickSpace;": "\u205F\u200A",
-  "&ThinSpace;": "\u2009",
-  "&Tilde;": "\u223C",
-  "&TildeEqual;": "\u2243",
-  "&TildeFullEqual;": "\u2245",
-  "&TildeTilde;": "\u2248",
+  "&Therefore;": "∴",
+  "&Theta;": "Θ",
+  "&ThickSpace;": "  ",
+  "&ThinSpace;": " ",
+  "&Tilde;": "∼",
+  "&TildeEqual;": "≃",
+  "&TildeFullEqual;": "≅",
+  "&TildeTilde;": "≈",
   "&Topf;": "\uD835\uDD4B",
-  "&TripleDot;": "\u20DB",
+  "&TripleDot;": "⃛",
   "&Tscr;": "\uD835\uDCAF",
-  "&Tstrok;": "\u0166",
-  "&Uacute": "\xDA",
-  "&Uacute;": "\xDA",
-  "&Uarr;": "\u219F",
-  "&Uarrocir;": "\u2949",
-  "&Ubrcy;": "\u040E",
-  "&Ubreve;": "\u016C",
-  "&Ucirc": "\xDB",
-  "&Ucirc;": "\xDB",
-  "&Ucy;": "\u0423",
-  "&Udblac;": "\u0170",
+  "&Tstrok;": "Ŧ",
+  "&Uacute": "Ú",
+  "&Uacute;": "Ú",
+  "&Uarr;": "↟",
+  "&Uarrocir;": "⥉",
+  "&Ubrcy;": "Ў",
+  "&Ubreve;": "Ŭ",
+  "&Ucirc": "Û",
+  "&Ucirc;": "Û",
+  "&Ucy;": "У",
+  "&Udblac;": "Ű",
   "&Ufr;": "\uD835\uDD18",
-  "&Ugrave": "\xD9",
-  "&Ugrave;": "\xD9",
-  "&Umacr;": "\u016A",
+  "&Ugrave": "Ù",
+  "&Ugrave;": "Ù",
+  "&Umacr;": "Ū",
   "&UnderBar;": "_",
-  "&UnderBrace;": "\u23DF",
-  "&UnderBracket;": "\u23B5",
-  "&UnderParenthesis;": "\u23DD",
-  "&Union;": "\u22C3",
-  "&UnionPlus;": "\u228E",
-  "&Uogon;": "\u0172",
+  "&UnderBrace;": "⏟",
+  "&UnderBracket;": "⎵",
+  "&UnderParenthesis;": "⏝",
+  "&Union;": "⋃",
+  "&UnionPlus;": "⊎",
+  "&Uogon;": "Ų",
   "&Uopf;": "\uD835\uDD4C",
-  "&UpArrow;": "\u2191",
-  "&UpArrowBar;": "\u2912",
-  "&UpArrowDownArrow;": "\u21C5",
-  "&UpDownArrow;": "\u2195",
-  "&UpEquilibrium;": "\u296E",
-  "&UpTee;": "\u22A5",
-  "&UpTeeArrow;": "\u21A5",
-  "&Uparrow;": "\u21D1",
-  "&Updownarrow;": "\u21D5",
-  "&UpperLeftArrow;": "\u2196",
-  "&UpperRightArrow;": "\u2197",
-  "&Upsi;": "\u03D2",
-  "&Upsilon;": "\u03A5",
-  "&Uring;": "\u016E",
+  "&UpArrow;": "↑",
+  "&UpArrowBar;": "⤒",
+  "&UpArrowDownArrow;": "⇅",
+  "&UpDownArrow;": "↕",
+  "&UpEquilibrium;": "⥮",
+  "&UpTee;": "⊥",
+  "&UpTeeArrow;": "↥",
+  "&Uparrow;": "⇑",
+  "&Updownarrow;": "⇕",
+  "&UpperLeftArrow;": "↖",
+  "&UpperRightArrow;": "↗",
+  "&Upsi;": "ϒ",
+  "&Upsilon;": "Υ",
+  "&Uring;": "Ů",
   "&Uscr;": "\uD835\uDCB0",
-  "&Utilde;": "\u0168",
-  "&Uuml": "\xDC",
-  "&Uuml;": "\xDC",
-  "&VDash;": "\u22AB",
-  "&Vbar;": "\u2AEB",
-  "&Vcy;": "\u0412",
-  "&Vdash;": "\u22A9",
-  "&Vdashl;": "\u2AE6",
-  "&Vee;": "\u22C1",
-  "&Verbar;": "\u2016",
-  "&Vert;": "\u2016",
-  "&VerticalBar;": "\u2223",
+  "&Utilde;": "Ũ",
+  "&Uuml": "Ü",
+  "&Uuml;": "Ü",
+  "&VDash;": "⊫",
+  "&Vbar;": "⫫",
+  "&Vcy;": "В",
+  "&Vdash;": "⊩",
+  "&Vdashl;": "⫦",
+  "&Vee;": "⋁",
+  "&Verbar;": "‖",
+  "&Vert;": "‖",
+  "&VerticalBar;": "∣",
   "&VerticalLine;": "|",
-  "&VerticalSeparator;": "\u2758",
-  "&VerticalTilde;": "\u2240",
-  "&VeryThinSpace;": "\u200A",
+  "&VerticalSeparator;": "❘",
+  "&VerticalTilde;": "≀",
+  "&VeryThinSpace;": " ",
   "&Vfr;": "\uD835\uDD19",
   "&Vopf;": "\uD835\uDD4D",
   "&Vscr;": "\uD835\uDCB1",
-  "&Vvdash;": "\u22AA",
-  "&Wcirc;": "\u0174",
-  "&Wedge;": "\u22C0",
+  "&Vvdash;": "⊪",
+  "&Wcirc;": "Ŵ",
+  "&Wedge;": "⋀",
   "&Wfr;": "\uD835\uDD1A",
   "&Wopf;": "\uD835\uDD4E",
   "&Wscr;": "\uD835\uDCB2",
   "&Xfr;": "\uD835\uDD1B",
-  "&Xi;": "\u039E",
+  "&Xi;": "Ξ",
   "&Xopf;": "\uD835\uDD4F",
   "&Xscr;": "\uD835\uDCB3",
-  "&YAcy;": "\u042F",
-  "&YIcy;": "\u0407",
-  "&YUcy;": "\u042E",
-  "&Yacute": "\xDD",
-  "&Yacute;": "\xDD",
-  "&Ycirc;": "\u0176",
-  "&Ycy;": "\u042B",
+  "&YAcy;": "Я",
+  "&YIcy;": "Ї",
+  "&YUcy;": "Ю",
+  "&Yacute": "Ý",
+  "&Yacute;": "Ý",
+  "&Ycirc;": "Ŷ",
+  "&Ycy;": "Ы",
   "&Yfr;": "\uD835\uDD1C",
   "&Yopf;": "\uD835\uDD50",
   "&Yscr;": "\uD835\uDCB4",
-  "&Yuml;": "\u0178",
-  "&ZHcy;": "\u0416",
-  "&Zacute;": "\u0179",
-  "&Zcaron;": "\u017D",
-  "&Zcy;": "\u0417",
-  "&Zdot;": "\u017B",
-  "&ZeroWidthSpace;": "\u200B",
-  "&Zeta;": "\u0396",
-  "&Zfr;": "\u2128",
-  "&Zopf;": "\u2124",
+  "&Yuml;": "Ÿ",
+  "&ZHcy;": "Ж",
+  "&Zacute;": "Ź",
+  "&Zcaron;": "Ž",
+  "&Zcy;": "З",
+  "&Zdot;": "Ż",
+  "&ZeroWidthSpace;": "​",
+  "&Zeta;": "Ζ",
+  "&Zfr;": "ℨ",
+  "&Zopf;": "ℤ",
   "&Zscr;": "\uD835\uDCB5",
-  "&aacute": "\xE1",
-  "&aacute;": "\xE1",
-  "&abreve;": "\u0103",
-  "&ac;": "\u223E",
-  "&acE;": "\u223E\u0333",
-  "&acd;": "\u223F",
-  "&acirc": "\xE2",
-  "&acirc;": "\xE2",
-  "&acute": "\xB4",
-  "&acute;": "\xB4",
-  "&acy;": "\u0430",
-  "&aelig": "\xE6",
-  "&aelig;": "\xE6",
-  "&af;": "\u2061",
+  "&aacute": "á",
+  "&aacute;": "á",
+  "&abreve;": "ă",
+  "&ac;": "∾",
+  "&acE;": "∾̳",
+  "&acd;": "∿",
+  "&acirc": "â",
+  "&acirc;": "â",
+  "&acute": "´",
+  "&acute;": "´",
+  "&acy;": "а",
+  "&aelig": "æ",
+  "&aelig;": "æ",
+  "&af;": "⁡",
   "&afr;": "\uD835\uDD1E",
-  "&agrave": "\xE0",
-  "&agrave;": "\xE0",
-  "&alefsym;": "\u2135",
-  "&aleph;": "\u2135",
-  "&alpha;": "\u03B1",
-  "&amacr;": "\u0101",
-  "&amalg;": "\u2A3F",
+  "&agrave": "à",
+  "&agrave;": "à",
+  "&alefsym;": "ℵ",
+  "&aleph;": "ℵ",
+  "&alpha;": "α",
+  "&amacr;": "ā",
+  "&amalg;": "⨿",
   "&amp": "&",
   "&amp;": "&",
-  "&and;": "\u2227",
-  "&andand;": "\u2A55",
-  "&andd;": "\u2A5C",
-  "&andslope;": "\u2A58",
-  "&andv;": "\u2A5A",
-  "&ang;": "\u2220",
-  "&ange;": "\u29A4",
-  "&angle;": "\u2220",
-  "&angmsd;": "\u2221",
-  "&angmsdaa;": "\u29A8",
-  "&angmsdab;": "\u29A9",
-  "&angmsdac;": "\u29AA",
-  "&angmsdad;": "\u29AB",
-  "&angmsdae;": "\u29AC",
-  "&angmsdaf;": "\u29AD",
-  "&angmsdag;": "\u29AE",
-  "&angmsdah;": "\u29AF",
-  "&angrt;": "\u221F",
-  "&angrtvb;": "\u22BE",
-  "&angrtvbd;": "\u299D",
-  "&angsph;": "\u2222",
-  "&angst;": "\xC5",
-  "&angzarr;": "\u237C",
-  "&aogon;": "\u0105",
+  "&and;": "∧",
+  "&andand;": "⩕",
+  "&andd;": "⩜",
+  "&andslope;": "⩘",
+  "&andv;": "⩚",
+  "&ang;": "∠",
+  "&ange;": "⦤",
+  "&angle;": "∠",
+  "&angmsd;": "∡",
+  "&angmsdaa;": "⦨",
+  "&angmsdab;": "⦩",
+  "&angmsdac;": "⦪",
+  "&angmsdad;": "⦫",
+  "&angmsdae;": "⦬",
+  "&angmsdaf;": "⦭",
+  "&angmsdag;": "⦮",
+  "&angmsdah;": "⦯",
+  "&angrt;": "∟",
+  "&angrtvb;": "⊾",
+  "&angrtvbd;": "⦝",
+  "&angsph;": "∢",
+  "&angst;": "Å",
+  "&angzarr;": "⍼",
+  "&aogon;": "ą",
   "&aopf;": "\uD835\uDD52",
-  "&ap;": "\u2248",
-  "&apE;": "\u2A70",
-  "&apacir;": "\u2A6F",
-  "&ape;": "\u224A",
-  "&apid;": "\u224B",
+  "&ap;": "≈",
+  "&apE;": "⩰",
+  "&apacir;": "⩯",
+  "&ape;": "≊",
+  "&apid;": "≋",
   "&apos;": "'",
-  "&approx;": "\u2248",
-  "&approxeq;": "\u224A",
-  "&aring": "\xE5",
-  "&aring;": "\xE5",
+  "&approx;": "≈",
+  "&approxeq;": "≊",
+  "&aring": "å",
+  "&aring;": "å",
   "&ascr;": "\uD835\uDCB6",
   "&ast;": "*",
-  "&asymp;": "\u2248",
-  "&asympeq;": "\u224D",
-  "&atilde": "\xE3",
-  "&atilde;": "\xE3",
-  "&auml": "\xE4",
-  "&auml;": "\xE4",
-  "&awconint;": "\u2233",
-  "&awint;": "\u2A11",
-  "&bNot;": "\u2AED",
-  "&backcong;": "\u224C",
-  "&backepsilon;": "\u03F6",
-  "&backprime;": "\u2035",
-  "&backsim;": "\u223D",
-  "&backsimeq;": "\u22CD",
-  "&barvee;": "\u22BD",
-  "&barwed;": "\u2305",
-  "&barwedge;": "\u2305",
-  "&bbrk;": "\u23B5",
-  "&bbrktbrk;": "\u23B6",
-  "&bcong;": "\u224C",
-  "&bcy;": "\u0431",
-  "&bdquo;": "\u201E",
-  "&becaus;": "\u2235",
-  "&because;": "\u2235",
-  "&bemptyv;": "\u29B0",
-  "&bepsi;": "\u03F6",
-  "&bernou;": "\u212C",
-  "&beta;": "\u03B2",
-  "&beth;": "\u2136",
-  "&between;": "\u226C",
+  "&asymp;": "≈",
+  "&asympeq;": "≍",
+  "&atilde": "ã",
+  "&atilde;": "ã",
+  "&auml": "ä",
+  "&auml;": "ä",
+  "&awconint;": "∳",
+  "&awint;": "⨑",
+  "&bNot;": "⫭",
+  "&backcong;": "≌",
+  "&backepsilon;": "϶",
+  "&backprime;": "‵",
+  "&backsim;": "∽",
+  "&backsimeq;": "⋍",
+  "&barvee;": "⊽",
+  "&barwed;": "⌅",
+  "&barwedge;": "⌅",
+  "&bbrk;": "⎵",
+  "&bbrktbrk;": "⎶",
+  "&bcong;": "≌",
+  "&bcy;": "б",
+  "&bdquo;": "„",
+  "&becaus;": "∵",
+  "&because;": "∵",
+  "&bemptyv;": "⦰",
+  "&bepsi;": "϶",
+  "&bernou;": "ℬ",
+  "&beta;": "β",
+  "&beth;": "ℶ",
+  "&between;": "≬",
   "&bfr;": "\uD835\uDD1F",
-  "&bigcap;": "\u22C2",
-  "&bigcirc;": "\u25EF",
-  "&bigcup;": "\u22C3",
-  "&bigodot;": "\u2A00",
-  "&bigoplus;": "\u2A01",
-  "&bigotimes;": "\u2A02",
-  "&bigsqcup;": "\u2A06",
-  "&bigstar;": "\u2605",
-  "&bigtriangledown;": "\u25BD",
-  "&bigtriangleup;": "\u25B3",
-  "&biguplus;": "\u2A04",
-  "&bigvee;": "\u22C1",
-  "&bigwedge;": "\u22C0",
-  "&bkarow;": "\u290D",
-  "&blacklozenge;": "\u29EB",
-  "&blacksquare;": "\u25AA",
-  "&blacktriangle;": "\u25B4",
-  "&blacktriangledown;": "\u25BE",
-  "&blacktriangleleft;": "\u25C2",
-  "&blacktriangleright;": "\u25B8",
-  "&blank;": "\u2423",
-  "&blk12;": "\u2592",
-  "&blk14;": "\u2591",
-  "&blk34;": "\u2593",
-  "&block;": "\u2588",
-  "&bne;": "=\u20E5",
-  "&bnequiv;": "\u2261\u20E5",
-  "&bnot;": "\u2310",
+  "&bigcap;": "⋂",
+  "&bigcirc;": "◯",
+  "&bigcup;": "⋃",
+  "&bigodot;": "⨀",
+  "&bigoplus;": "⨁",
+  "&bigotimes;": "⨂",
+  "&bigsqcup;": "⨆",
+  "&bigstar;": "★",
+  "&bigtriangledown;": "▽",
+  "&bigtriangleup;": "△",
+  "&biguplus;": "⨄",
+  "&bigvee;": "⋁",
+  "&bigwedge;": "⋀",
+  "&bkarow;": "⤍",
+  "&blacklozenge;": "⧫",
+  "&blacksquare;": "▪",
+  "&blacktriangle;": "▴",
+  "&blacktriangledown;": "▾",
+  "&blacktriangleleft;": "◂",
+  "&blacktriangleright;": "▸",
+  "&blank;": "␣",
+  "&blk12;": "▒",
+  "&blk14;": "░",
+  "&blk34;": "▓",
+  "&block;": "█",
+  "&bne;": "=⃥",
+  "&bnequiv;": "≡⃥",
+  "&bnot;": "⌐",
   "&bopf;": "\uD835\uDD53",
-  "&bot;": "\u22A5",
-  "&bottom;": "\u22A5",
-  "&bowtie;": "\u22C8",
-  "&boxDL;": "\u2557",
-  "&boxDR;": "\u2554",
-  "&boxDl;": "\u2556",
-  "&boxDr;": "\u2553",
-  "&boxH;": "\u2550",
-  "&boxHD;": "\u2566",
-  "&boxHU;": "\u2569",
-  "&boxHd;": "\u2564",
-  "&boxHu;": "\u2567",
-  "&boxUL;": "\u255D",
-  "&boxUR;": "\u255A",
-  "&boxUl;": "\u255C",
-  "&boxUr;": "\u2559",
-  "&boxV;": "\u2551",
-  "&boxVH;": "\u256C",
-  "&boxVL;": "\u2563",
-  "&boxVR;": "\u2560",
-  "&boxVh;": "\u256B",
-  "&boxVl;": "\u2562",
-  "&boxVr;": "\u255F",
-  "&boxbox;": "\u29C9",
-  "&boxdL;": "\u2555",
-  "&boxdR;": "\u2552",
-  "&boxdl;": "\u2510",
-  "&boxdr;": "\u250C",
-  "&boxh;": "\u2500",
-  "&boxhD;": "\u2565",
-  "&boxhU;": "\u2568",
-  "&boxhd;": "\u252C",
-  "&boxhu;": "\u2534",
-  "&boxminus;": "\u229F",
-  "&boxplus;": "\u229E",
-  "&boxtimes;": "\u22A0",
-  "&boxuL;": "\u255B",
-  "&boxuR;": "\u2558",
-  "&boxul;": "\u2518",
-  "&boxur;": "\u2514",
-  "&boxv;": "\u2502",
-  "&boxvH;": "\u256A",
-  "&boxvL;": "\u2561",
-  "&boxvR;": "\u255E",
-  "&boxvh;": "\u253C",
-  "&boxvl;": "\u2524",
-  "&boxvr;": "\u251C",
-  "&bprime;": "\u2035",
-  "&breve;": "\u02D8",
-  "&brvbar": "\xA6",
-  "&brvbar;": "\xA6",
+  "&bot;": "⊥",
+  "&bottom;": "⊥",
+  "&bowtie;": "⋈",
+  "&boxDL;": "╗",
+  "&boxDR;": "╔",
+  "&boxDl;": "╖",
+  "&boxDr;": "╓",
+  "&boxH;": "═",
+  "&boxHD;": "╦",
+  "&boxHU;": "╩",
+  "&boxHd;": "╤",
+  "&boxHu;": "╧",
+  "&boxUL;": "╝",
+  "&boxUR;": "╚",
+  "&boxUl;": "╜",
+  "&boxUr;": "╙",
+  "&boxV;": "║",
+  "&boxVH;": "╬",
+  "&boxVL;": "╣",
+  "&boxVR;": "╠",
+  "&boxVh;": "╫",
+  "&boxVl;": "╢",
+  "&boxVr;": "╟",
+  "&boxbox;": "⧉",
+  "&boxdL;": "╕",
+  "&boxdR;": "╒",
+  "&boxdl;": "┐",
+  "&boxdr;": "┌",
+  "&boxh;": "─",
+  "&boxhD;": "╥",
+  "&boxhU;": "╨",
+  "&boxhd;": "┬",
+  "&boxhu;": "┴",
+  "&boxminus;": "⊟",
+  "&boxplus;": "⊞",
+  "&boxtimes;": "⊠",
+  "&boxuL;": "╛",
+  "&boxuR;": "╘",
+  "&boxul;": "┘",
+  "&boxur;": "└",
+  "&boxv;": "│",
+  "&boxvH;": "╪",
+  "&boxvL;": "╡",
+  "&boxvR;": "╞",
+  "&boxvh;": "┼",
+  "&boxvl;": "┤",
+  "&boxvr;": "├",
+  "&bprime;": "‵",
+  "&breve;": "˘",
+  "&brvbar": "¦",
+  "&brvbar;": "¦",
   "&bscr;": "\uD835\uDCB7",
-  "&bsemi;": "\u204F",
-  "&bsim;": "\u223D",
-  "&bsime;": "\u22CD",
+  "&bsemi;": "⁏",
+  "&bsim;": "∽",
+  "&bsime;": "⋍",
   "&bsol;": "\\",
-  "&bsolb;": "\u29C5",
-  "&bsolhsub;": "\u27C8",
-  "&bull;": "\u2022",
-  "&bullet;": "\u2022",
-  "&bump;": "\u224E",
-  "&bumpE;": "\u2AAE",
-  "&bumpe;": "\u224F",
-  "&bumpeq;": "\u224F",
-  "&cacute;": "\u0107",
-  "&cap;": "\u2229",
-  "&capand;": "\u2A44",
-  "&capbrcup;": "\u2A49",
-  "&capcap;": "\u2A4B",
-  "&capcup;": "\u2A47",
-  "&capdot;": "\u2A40",
-  "&caps;": "\u2229\uFE00",
-  "&caret;": "\u2041",
-  "&caron;": "\u02C7",
-  "&ccaps;": "\u2A4D",
-  "&ccaron;": "\u010D",
-  "&ccedil": "\xE7",
-  "&ccedil;": "\xE7",
-  "&ccirc;": "\u0109",
-  "&ccups;": "\u2A4C",
-  "&ccupssm;": "\u2A50",
-  "&cdot;": "\u010B",
-  "&cedil": "\xB8",
-  "&cedil;": "\xB8",
-  "&cemptyv;": "\u29B2",
-  "&cent": "\xA2",
-  "&cent;": "\xA2",
-  "&centerdot;": "\xB7",
+  "&bsolb;": "⧅",
+  "&bsolhsub;": "⟈",
+  "&bull;": "•",
+  "&bullet;": "•",
+  "&bump;": "≎",
+  "&bumpE;": "⪮",
+  "&bumpe;": "≏",
+  "&bumpeq;": "≏",
+  "&cacute;": "ć",
+  "&cap;": "∩",
+  "&capand;": "⩄",
+  "&capbrcup;": "⩉",
+  "&capcap;": "⩋",
+  "&capcup;": "⩇",
+  "&capdot;": "⩀",
+  "&caps;": "∩︀",
+  "&caret;": "⁁",
+  "&caron;": "ˇ",
+  "&ccaps;": "⩍",
+  "&ccaron;": "č",
+  "&ccedil": "ç",
+  "&ccedil;": "ç",
+  "&ccirc;": "ĉ",
+  "&ccups;": "⩌",
+  "&ccupssm;": "⩐",
+  "&cdot;": "ċ",
+  "&cedil": "¸",
+  "&cedil;": "¸",
+  "&cemptyv;": "⦲",
+  "&cent": "¢",
+  "&cent;": "¢",
+  "&centerdot;": "·",
   "&cfr;": "\uD835\uDD20",
-  "&chcy;": "\u0447",
-  "&check;": "\u2713",
-  "&checkmark;": "\u2713",
-  "&chi;": "\u03C7",
-  "&cir;": "\u25CB",
-  "&cirE;": "\u29C3",
-  "&circ;": "\u02C6",
-  "&circeq;": "\u2257",
-  "&circlearrowleft;": "\u21BA",
-  "&circlearrowright;": "\u21BB",
-  "&circledR;": "\xAE",
-  "&circledS;": "\u24C8",
-  "&circledast;": "\u229B",
-  "&circledcirc;": "\u229A",
-  "&circleddash;": "\u229D",
-  "&cire;": "\u2257",
-  "&cirfnint;": "\u2A10",
-  "&cirmid;": "\u2AEF",
-  "&cirscir;": "\u29C2",
-  "&clubs;": "\u2663",
-  "&clubsuit;": "\u2663",
+  "&chcy;": "ч",
+  "&check;": "✓",
+  "&checkmark;": "✓",
+  "&chi;": "χ",
+  "&cir;": "○",
+  "&cirE;": "⧃",
+  "&circ;": "ˆ",
+  "&circeq;": "≗",
+  "&circlearrowleft;": "↺",
+  "&circlearrowright;": "↻",
+  "&circledR;": "®",
+  "&circledS;": "Ⓢ",
+  "&circledast;": "⊛",
+  "&circledcirc;": "⊚",
+  "&circleddash;": "⊝",
+  "&cire;": "≗",
+  "&cirfnint;": "⨐",
+  "&cirmid;": "⫯",
+  "&cirscir;": "⧂",
+  "&clubs;": "♣",
+  "&clubsuit;": "♣",
   "&colon;": ":",
-  "&colone;": "\u2254",
-  "&coloneq;": "\u2254",
+  "&colone;": "≔",
+  "&coloneq;": "≔",
   "&comma;": ",",
   "&commat;": "@",
-  "&comp;": "\u2201",
-  "&compfn;": "\u2218",
-  "&complement;": "\u2201",
-  "&complexes;": "\u2102",
-  "&cong;": "\u2245",
-  "&congdot;": "\u2A6D",
-  "&conint;": "\u222E",
+  "&comp;": "∁",
+  "&compfn;": "∘",
+  "&complement;": "∁",
+  "&complexes;": "ℂ",
+  "&cong;": "≅",
+  "&congdot;": "⩭",
+  "&conint;": "∮",
   "&copf;": "\uD835\uDD54",
-  "&coprod;": "\u2210",
-  "&copy": "\xA9",
-  "&copy;": "\xA9",
-  "&copysr;": "\u2117",
-  "&crarr;": "\u21B5",
-  "&cross;": "\u2717",
+  "&coprod;": "∐",
+  "&copy": "©",
+  "&copy;": "©",
+  "&copysr;": "℗",
+  "&crarr;": "↵",
+  "&cross;": "✗",
   "&cscr;": "\uD835\uDCB8",
-  "&csub;": "\u2ACF",
-  "&csube;": "\u2AD1",
-  "&csup;": "\u2AD0",
-  "&csupe;": "\u2AD2",
-  "&ctdot;": "\u22EF",
-  "&cudarrl;": "\u2938",
-  "&cudarrr;": "\u2935",
-  "&cuepr;": "\u22DE",
-  "&cuesc;": "\u22DF",
-  "&cularr;": "\u21B6",
-  "&cularrp;": "\u293D",
-  "&cup;": "\u222A",
-  "&cupbrcap;": "\u2A48",
-  "&cupcap;": "\u2A46",
-  "&cupcup;": "\u2A4A",
-  "&cupdot;": "\u228D",
-  "&cupor;": "\u2A45",
-  "&cups;": "\u222A\uFE00",
-  "&curarr;": "\u21B7",
-  "&curarrm;": "\u293C",
-  "&curlyeqprec;": "\u22DE",
-  "&curlyeqsucc;": "\u22DF",
-  "&curlyvee;": "\u22CE",
-  "&curlywedge;": "\u22CF",
-  "&curren": "\xA4",
-  "&curren;": "\xA4",
-  "&curvearrowleft;": "\u21B6",
-  "&curvearrowright;": "\u21B7",
-  "&cuvee;": "\u22CE",
-  "&cuwed;": "\u22CF",
-  "&cwconint;": "\u2232",
-  "&cwint;": "\u2231",
-  "&cylcty;": "\u232D",
-  "&dArr;": "\u21D3",
-  "&dHar;": "\u2965",
-  "&dagger;": "\u2020",
-  "&daleth;": "\u2138",
-  "&darr;": "\u2193",
-  "&dash;": "\u2010",
-  "&dashv;": "\u22A3",
-  "&dbkarow;": "\u290F",
-  "&dblac;": "\u02DD",
-  "&dcaron;": "\u010F",
-  "&dcy;": "\u0434",
-  "&dd;": "\u2146",
-  "&ddagger;": "\u2021",
-  "&ddarr;": "\u21CA",
-  "&ddotseq;": "\u2A77",
-  "&deg": "\xB0",
-  "&deg;": "\xB0",
-  "&delta;": "\u03B4",
-  "&demptyv;": "\u29B1",
-  "&dfisht;": "\u297F",
+  "&csub;": "⫏",
+  "&csube;": "⫑",
+  "&csup;": "⫐",
+  "&csupe;": "⫒",
+  "&ctdot;": "⋯",
+  "&cudarrl;": "⤸",
+  "&cudarrr;": "⤵",
+  "&cuepr;": "⋞",
+  "&cuesc;": "⋟",
+  "&cularr;": "↶",
+  "&cularrp;": "⤽",
+  "&cup;": "∪",
+  "&cupbrcap;": "⩈",
+  "&cupcap;": "⩆",
+  "&cupcup;": "⩊",
+  "&cupdot;": "⊍",
+  "&cupor;": "⩅",
+  "&cups;": "∪︀",
+  "&curarr;": "↷",
+  "&curarrm;": "⤼",
+  "&curlyeqprec;": "⋞",
+  "&curlyeqsucc;": "⋟",
+  "&curlyvee;": "⋎",
+  "&curlywedge;": "⋏",
+  "&curren": "¤",
+  "&curren;": "¤",
+  "&curvearrowleft;": "↶",
+  "&curvearrowright;": "↷",
+  "&cuvee;": "⋎",
+  "&cuwed;": "⋏",
+  "&cwconint;": "∲",
+  "&cwint;": "∱",
+  "&cylcty;": "⌭",
+  "&dArr;": "⇓",
+  "&dHar;": "⥥",
+  "&dagger;": "†",
+  "&daleth;": "ℸ",
+  "&darr;": "↓",
+  "&dash;": "‐",
+  "&dashv;": "⊣",
+  "&dbkarow;": "⤏",
+  "&dblac;": "˝",
+  "&dcaron;": "ď",
+  "&dcy;": "д",
+  "&dd;": "ⅆ",
+  "&ddagger;": "‡",
+  "&ddarr;": "⇊",
+  "&ddotseq;": "⩷",
+  "&deg": "°",
+  "&deg;": "°",
+  "&delta;": "δ",
+  "&demptyv;": "⦱",
+  "&dfisht;": "⥿",
   "&dfr;": "\uD835\uDD21",
-  "&dharl;": "\u21C3",
-  "&dharr;": "\u21C2",
-  "&diam;": "\u22C4",
-  "&diamond;": "\u22C4",
-  "&diamondsuit;": "\u2666",
-  "&diams;": "\u2666",
-  "&die;": "\xA8",
-  "&digamma;": "\u03DD",
-  "&disin;": "\u22F2",
-  "&div;": "\xF7",
-  "&divide": "\xF7",
-  "&divide;": "\xF7",
-  "&divideontimes;": "\u22C7",
-  "&divonx;": "\u22C7",
-  "&djcy;": "\u0452",
-  "&dlcorn;": "\u231E",
-  "&dlcrop;": "\u230D",
+  "&dharl;": "⇃",
+  "&dharr;": "⇂",
+  "&diam;": "⋄",
+  "&diamond;": "⋄",
+  "&diamondsuit;": "♦",
+  "&diams;": "♦",
+  "&die;": "¨",
+  "&digamma;": "ϝ",
+  "&disin;": "⋲",
+  "&div;": "÷",
+  "&divide": "÷",
+  "&divide;": "÷",
+  "&divideontimes;": "⋇",
+  "&divonx;": "⋇",
+  "&djcy;": "ђ",
+  "&dlcorn;": "⌞",
+  "&dlcrop;": "⌍",
   "&dollar;": "$",
   "&dopf;": "\uD835\uDD55",
-  "&dot;": "\u02D9",
-  "&doteq;": "\u2250",
-  "&doteqdot;": "\u2251",
-  "&dotminus;": "\u2238",
-  "&dotplus;": "\u2214",
-  "&dotsquare;": "\u22A1",
-  "&doublebarwedge;": "\u2306",
-  "&downarrow;": "\u2193",
-  "&downdownarrows;": "\u21CA",
-  "&downharpoonleft;": "\u21C3",
-  "&downharpoonright;": "\u21C2",
-  "&drbkarow;": "\u2910",
-  "&drcorn;": "\u231F",
-  "&drcrop;": "\u230C",
+  "&dot;": "˙",
+  "&doteq;": "≐",
+  "&doteqdot;": "≑",
+  "&dotminus;": "∸",
+  "&dotplus;": "∔",
+  "&dotsquare;": "⊡",
+  "&doublebarwedge;": "⌆",
+  "&downarrow;": "↓",
+  "&downdownarrows;": "⇊",
+  "&downharpoonleft;": "⇃",
+  "&downharpoonright;": "⇂",
+  "&drbkarow;": "⤐",
+  "&drcorn;": "⌟",
+  "&drcrop;": "⌌",
   "&dscr;": "\uD835\uDCB9",
-  "&dscy;": "\u0455",
-  "&dsol;": "\u29F6",
-  "&dstrok;": "\u0111",
-  "&dtdot;": "\u22F1",
-  "&dtri;": "\u25BF",
-  "&dtrif;": "\u25BE",
-  "&duarr;": "\u21F5",
-  "&duhar;": "\u296F",
-  "&dwangle;": "\u29A6",
-  "&dzcy;": "\u045F",
-  "&dzigrarr;": "\u27FF",
-  "&eDDot;": "\u2A77",
-  "&eDot;": "\u2251",
-  "&eacute": "\xE9",
-  "&eacute;": "\xE9",
-  "&easter;": "\u2A6E",
-  "&ecaron;": "\u011B",
-  "&ecir;": "\u2256",
-  "&ecirc": "\xEA",
-  "&ecirc;": "\xEA",
-  "&ecolon;": "\u2255",
-  "&ecy;": "\u044D",
-  "&edot;": "\u0117",
-  "&ee;": "\u2147",
-  "&efDot;": "\u2252",
+  "&dscy;": "ѕ",
+  "&dsol;": "⧶",
+  "&dstrok;": "đ",
+  "&dtdot;": "⋱",
+  "&dtri;": "▿",
+  "&dtrif;": "▾",
+  "&duarr;": "⇵",
+  "&duhar;": "⥯",
+  "&dwangle;": "⦦",
+  "&dzcy;": "џ",
+  "&dzigrarr;": "⟿",
+  "&eDDot;": "⩷",
+  "&eDot;": "≑",
+  "&eacute": "é",
+  "&eacute;": "é",
+  "&easter;": "⩮",
+  "&ecaron;": "ě",
+  "&ecir;": "≖",
+  "&ecirc": "ê",
+  "&ecirc;": "ê",
+  "&ecolon;": "≕",
+  "&ecy;": "э",
+  "&edot;": "ė",
+  "&ee;": "ⅇ",
+  "&efDot;": "≒",
   "&efr;": "\uD835\uDD22",
-  "&eg;": "\u2A9A",
-  "&egrave": "\xE8",
-  "&egrave;": "\xE8",
-  "&egs;": "\u2A96",
-  "&egsdot;": "\u2A98",
-  "&el;": "\u2A99",
-  "&elinters;": "\u23E7",
-  "&ell;": "\u2113",
-  "&els;": "\u2A95",
-  "&elsdot;": "\u2A97",
-  "&emacr;": "\u0113",
-  "&empty;": "\u2205",
-  "&emptyset;": "\u2205",
-  "&emptyv;": "\u2205",
-  "&emsp13;": "\u2004",
-  "&emsp14;": "\u2005",
-  "&emsp;": "\u2003",
-  "&eng;": "\u014B",
-  "&ensp;": "\u2002",
-  "&eogon;": "\u0119",
+  "&eg;": "⪚",
+  "&egrave": "è",
+  "&egrave;": "è",
+  "&egs;": "⪖",
+  "&egsdot;": "⪘",
+  "&el;": "⪙",
+  "&elinters;": "⏧",
+  "&ell;": "ℓ",
+  "&els;": "⪕",
+  "&elsdot;": "⪗",
+  "&emacr;": "ē",
+  "&empty;": "∅",
+  "&emptyset;": "∅",
+  "&emptyv;": "∅",
+  "&emsp13;": " ",
+  "&emsp14;": " ",
+  "&emsp;": " ",
+  "&eng;": "ŋ",
+  "&ensp;": " ",
+  "&eogon;": "ę",
   "&eopf;": "\uD835\uDD56",
-  "&epar;": "\u22D5",
-  "&eparsl;": "\u29E3",
-  "&eplus;": "\u2A71",
-  "&epsi;": "\u03B5",
-  "&epsilon;": "\u03B5",
-  "&epsiv;": "\u03F5",
-  "&eqcirc;": "\u2256",
-  "&eqcolon;": "\u2255",
-  "&eqsim;": "\u2242",
-  "&eqslantgtr;": "\u2A96",
-  "&eqslantless;": "\u2A95",
+  "&epar;": "⋕",
+  "&eparsl;": "⧣",
+  "&eplus;": "⩱",
+  "&epsi;": "ε",
+  "&epsilon;": "ε",
+  "&epsiv;": "ϵ",
+  "&eqcirc;": "≖",
+  "&eqcolon;": "≕",
+  "&eqsim;": "≂",
+  "&eqslantgtr;": "⪖",
+  "&eqslantless;": "⪕",
   "&equals;": "=",
-  "&equest;": "\u225F",
-  "&equiv;": "\u2261",
-  "&equivDD;": "\u2A78",
-  "&eqvparsl;": "\u29E5",
-  "&erDot;": "\u2253",
-  "&erarr;": "\u2971",
-  "&escr;": "\u212F",
-  "&esdot;": "\u2250",
-  "&esim;": "\u2242",
-  "&eta;": "\u03B7",
-  "&eth": "\xF0",
-  "&eth;": "\xF0",
-  "&euml": "\xEB",
-  "&euml;": "\xEB",
-  "&euro;": "\u20AC",
+  "&equest;": "≟",
+  "&equiv;": "≡",
+  "&equivDD;": "⩸",
+  "&eqvparsl;": "⧥",
+  "&erDot;": "≓",
+  "&erarr;": "⥱",
+  "&escr;": "ℯ",
+  "&esdot;": "≐",
+  "&esim;": "≂",
+  "&eta;": "η",
+  "&eth": "ð",
+  "&eth;": "ð",
+  "&euml": "ë",
+  "&euml;": "ë",
+  "&euro;": "€",
   "&excl;": "!",
-  "&exist;": "\u2203",
-  "&expectation;": "\u2130",
-  "&exponentiale;": "\u2147",
-  "&fallingdotseq;": "\u2252",
-  "&fcy;": "\u0444",
-  "&female;": "\u2640",
-  "&ffilig;": "\uFB03",
-  "&fflig;": "\uFB00",
-  "&ffllig;": "\uFB04",
+  "&exist;": "∃",
+  "&expectation;": "ℰ",
+  "&exponentiale;": "ⅇ",
+  "&fallingdotseq;": "≒",
+  "&fcy;": "ф",
+  "&female;": "♀",
+  "&ffilig;": "ﬃ",
+  "&fflig;": "ﬀ",
+  "&ffllig;": "ﬄ",
   "&ffr;": "\uD835\uDD23",
-  "&filig;": "\uFB01",
+  "&filig;": "ﬁ",
   "&fjlig;": "fj",
-  "&flat;": "\u266D",
-  "&fllig;": "\uFB02",
-  "&fltns;": "\u25B1",
-  "&fnof;": "\u0192",
+  "&flat;": "♭",
+  "&fllig;": "ﬂ",
+  "&fltns;": "▱",
+  "&fnof;": "ƒ",
   "&fopf;": "\uD835\uDD57",
-  "&forall;": "\u2200",
-  "&fork;": "\u22D4",
-  "&forkv;": "\u2AD9",
-  "&fpartint;": "\u2A0D",
-  "&frac12": "\xBD",
-  "&frac12;": "\xBD",
-  "&frac13;": "\u2153",
-  "&frac14": "\xBC",
-  "&frac14;": "\xBC",
-  "&frac15;": "\u2155",
-  "&frac16;": "\u2159",
-  "&frac18;": "\u215B",
-  "&frac23;": "\u2154",
-  "&frac25;": "\u2156",
-  "&frac34": "\xBE",
-  "&frac34;": "\xBE",
-  "&frac35;": "\u2157",
-  "&frac38;": "\u215C",
-  "&frac45;": "\u2158",
-  "&frac56;": "\u215A",
-  "&frac58;": "\u215D",
-  "&frac78;": "\u215E",
-  "&frasl;": "\u2044",
-  "&frown;": "\u2322",
+  "&forall;": "∀",
+  "&fork;": "⋔",
+  "&forkv;": "⫙",
+  "&fpartint;": "⨍",
+  "&frac12": "½",
+  "&frac12;": "½",
+  "&frac13;": "⅓",
+  "&frac14": "¼",
+  "&frac14;": "¼",
+  "&frac15;": "⅕",
+  "&frac16;": "⅙",
+  "&frac18;": "⅛",
+  "&frac23;": "⅔",
+  "&frac25;": "⅖",
+  "&frac34": "¾",
+  "&frac34;": "¾",
+  "&frac35;": "⅗",
+  "&frac38;": "⅜",
+  "&frac45;": "⅘",
+  "&frac56;": "⅚",
+  "&frac58;": "⅝",
+  "&frac78;": "⅞",
+  "&frasl;": "⁄",
+  "&frown;": "⌢",
   "&fscr;": "\uD835\uDCBB",
-  "&gE;": "\u2267",
-  "&gEl;": "\u2A8C",
-  "&gacute;": "\u01F5",
-  "&gamma;": "\u03B3",
-  "&gammad;": "\u03DD",
-  "&gap;": "\u2A86",
-  "&gbreve;": "\u011F",
-  "&gcirc;": "\u011D",
-  "&gcy;": "\u0433",
-  "&gdot;": "\u0121",
-  "&ge;": "\u2265",
-  "&gel;": "\u22DB",
-  "&geq;": "\u2265",
-  "&geqq;": "\u2267",
-  "&geqslant;": "\u2A7E",
-  "&ges;": "\u2A7E",
-  "&gescc;": "\u2AA9",
-  "&gesdot;": "\u2A80",
-  "&gesdoto;": "\u2A82",
-  "&gesdotol;": "\u2A84",
-  "&gesl;": "\u22DB\uFE00",
-  "&gesles;": "\u2A94",
+  "&gE;": "≧",
+  "&gEl;": "⪌",
+  "&gacute;": "ǵ",
+  "&gamma;": "γ",
+  "&gammad;": "ϝ",
+  "&gap;": "⪆",
+  "&gbreve;": "ğ",
+  "&gcirc;": "ĝ",
+  "&gcy;": "г",
+  "&gdot;": "ġ",
+  "&ge;": "≥",
+  "&gel;": "⋛",
+  "&geq;": "≥",
+  "&geqq;": "≧",
+  "&geqslant;": "⩾",
+  "&ges;": "⩾",
+  "&gescc;": "⪩",
+  "&gesdot;": "⪀",
+  "&gesdoto;": "⪂",
+  "&gesdotol;": "⪄",
+  "&gesl;": "⋛︀",
+  "&gesles;": "⪔",
   "&gfr;": "\uD835\uDD24",
-  "&gg;": "\u226B",
-  "&ggg;": "\u22D9",
-  "&gimel;": "\u2137",
-  "&gjcy;": "\u0453",
-  "&gl;": "\u2277",
-  "&glE;": "\u2A92",
-  "&gla;": "\u2AA5",
-  "&glj;": "\u2AA4",
-  "&gnE;": "\u2269",
-  "&gnap;": "\u2A8A",
-  "&gnapprox;": "\u2A8A",
-  "&gne;": "\u2A88",
-  "&gneq;": "\u2A88",
-  "&gneqq;": "\u2269",
-  "&gnsim;": "\u22E7",
+  "&gg;": "≫",
+  "&ggg;": "⋙",
+  "&gimel;": "ℷ",
+  "&gjcy;": "ѓ",
+  "&gl;": "≷",
+  "&glE;": "⪒",
+  "&gla;": "⪥",
+  "&glj;": "⪤",
+  "&gnE;": "≩",
+  "&gnap;": "⪊",
+  "&gnapprox;": "⪊",
+  "&gne;": "⪈",
+  "&gneq;": "⪈",
+  "&gneqq;": "≩",
+  "&gnsim;": "⋧",
   "&gopf;": "\uD835\uDD58",
   "&grave;": "`",
-  "&gscr;": "\u210A",
-  "&gsim;": "\u2273",
-  "&gsime;": "\u2A8E",
-  "&gsiml;": "\u2A90",
+  "&gscr;": "ℊ",
+  "&gsim;": "≳",
+  "&gsime;": "⪎",
+  "&gsiml;": "⪐",
   "&gt": ">",
   "&gt;": ">",
-  "&gtcc;": "\u2AA7",
-  "&gtcir;": "\u2A7A",
-  "&gtdot;": "\u22D7",
-  "&gtlPar;": "\u2995",
-  "&gtquest;": "\u2A7C",
-  "&gtrapprox;": "\u2A86",
-  "&gtrarr;": "\u2978",
-  "&gtrdot;": "\u22D7",
-  "&gtreqless;": "\u22DB",
-  "&gtreqqless;": "\u2A8C",
-  "&gtrless;": "\u2277",
-  "&gtrsim;": "\u2273",
-  "&gvertneqq;": "\u2269\uFE00",
-  "&gvnE;": "\u2269\uFE00",
-  "&hArr;": "\u21D4",
-  "&hairsp;": "\u200A",
-  "&half;": "\xBD",
-  "&hamilt;": "\u210B",
-  "&hardcy;": "\u044A",
-  "&harr;": "\u2194",
-  "&harrcir;": "\u2948",
-  "&harrw;": "\u21AD",
-  "&hbar;": "\u210F",
-  "&hcirc;": "\u0125",
-  "&hearts;": "\u2665",
-  "&heartsuit;": "\u2665",
-  "&hellip;": "\u2026",
-  "&hercon;": "\u22B9",
+  "&gtcc;": "⪧",
+  "&gtcir;": "⩺",
+  "&gtdot;": "⋗",
+  "&gtlPar;": "⦕",
+  "&gtquest;": "⩼",
+  "&gtrapprox;": "⪆",
+  "&gtrarr;": "⥸",
+  "&gtrdot;": "⋗",
+  "&gtreqless;": "⋛",
+  "&gtreqqless;": "⪌",
+  "&gtrless;": "≷",
+  "&gtrsim;": "≳",
+  "&gvertneqq;": "≩︀",
+  "&gvnE;": "≩︀",
+  "&hArr;": "⇔",
+  "&hairsp;": " ",
+  "&half;": "½",
+  "&hamilt;": "ℋ",
+  "&hardcy;": "ъ",
+  "&harr;": "↔",
+  "&harrcir;": "⥈",
+  "&harrw;": "↭",
+  "&hbar;": "ℏ",
+  "&hcirc;": "ĥ",
+  "&hearts;": "♥",
+  "&heartsuit;": "♥",
+  "&hellip;": "…",
+  "&hercon;": "⊹",
   "&hfr;": "\uD835\uDD25",
-  "&hksearow;": "\u2925",
-  "&hkswarow;": "\u2926",
-  "&hoarr;": "\u21FF",
-  "&homtht;": "\u223B",
-  "&hookleftarrow;": "\u21A9",
-  "&hookrightarrow;": "\u21AA",
+  "&hksearow;": "⤥",
+  "&hkswarow;": "⤦",
+  "&hoarr;": "⇿",
+  "&homtht;": "∻",
+  "&hookleftarrow;": "↩",
+  "&hookrightarrow;": "↪",
   "&hopf;": "\uD835\uDD59",
-  "&horbar;": "\u2015",
+  "&horbar;": "―",
   "&hscr;": "\uD835\uDCBD",
-  "&hslash;": "\u210F",
-  "&hstrok;": "\u0127",
-  "&hybull;": "\u2043",
-  "&hyphen;": "\u2010",
-  "&iacute": "\xED",
-  "&iacute;": "\xED",
-  "&ic;": "\u2063",
-  "&icirc": "\xEE",
-  "&icirc;": "\xEE",
-  "&icy;": "\u0438",
-  "&iecy;": "\u0435",
-  "&iexcl": "\xA1",
-  "&iexcl;": "\xA1",
-  "&iff;": "\u21D4",
+  "&hslash;": "ℏ",
+  "&hstrok;": "ħ",
+  "&hybull;": "⁃",
+  "&hyphen;": "‐",
+  "&iacute": "í",
+  "&iacute;": "í",
+  "&ic;": "⁣",
+  "&icirc": "î",
+  "&icirc;": "î",
+  "&icy;": "и",
+  "&iecy;": "е",
+  "&iexcl": "¡",
+  "&iexcl;": "¡",
+  "&iff;": "⇔",
   "&ifr;": "\uD835\uDD26",
-  "&igrave": "\xEC",
-  "&igrave;": "\xEC",
-  "&ii;": "\u2148",
-  "&iiiint;": "\u2A0C",
-  "&iiint;": "\u222D",
-  "&iinfin;": "\u29DC",
-  "&iiota;": "\u2129",
-  "&ijlig;": "\u0133",
-  "&imacr;": "\u012B",
-  "&image;": "\u2111",
-  "&imagline;": "\u2110",
-  "&imagpart;": "\u2111",
-  "&imath;": "\u0131",
-  "&imof;": "\u22B7",
-  "&imped;": "\u01B5",
-  "&in;": "\u2208",
-  "&incare;": "\u2105",
-  "&infin;": "\u221E",
-  "&infintie;": "\u29DD",
-  "&inodot;": "\u0131",
-  "&int;": "\u222B",
-  "&intcal;": "\u22BA",
-  "&integers;": "\u2124",
-  "&intercal;": "\u22BA",
-  "&intlarhk;": "\u2A17",
-  "&intprod;": "\u2A3C",
-  "&iocy;": "\u0451",
-  "&iogon;": "\u012F",
+  "&igrave": "ì",
+  "&igrave;": "ì",
+  "&ii;": "ⅈ",
+  "&iiiint;": "⨌",
+  "&iiint;": "∭",
+  "&iinfin;": "⧜",
+  "&iiota;": "℩",
+  "&ijlig;": "ĳ",
+  "&imacr;": "ī",
+  "&image;": "ℑ",
+  "&imagline;": "ℐ",
+  "&imagpart;": "ℑ",
+  "&imath;": "ı",
+  "&imof;": "⊷",
+  "&imped;": "Ƶ",
+  "&in;": "∈",
+  "&incare;": "℅",
+  "&infin;": "∞",
+  "&infintie;": "⧝",
+  "&inodot;": "ı",
+  "&int;": "∫",
+  "&intcal;": "⊺",
+  "&integers;": "ℤ",
+  "&intercal;": "⊺",
+  "&intlarhk;": "⨗",
+  "&intprod;": "⨼",
+  "&iocy;": "ё",
+  "&iogon;": "į",
   "&iopf;": "\uD835\uDD5A",
-  "&iota;": "\u03B9",
-  "&iprod;": "\u2A3C",
-  "&iquest": "\xBF",
-  "&iquest;": "\xBF",
+  "&iota;": "ι",
+  "&iprod;": "⨼",
+  "&iquest": "¿",
+  "&iquest;": "¿",
   "&iscr;": "\uD835\uDCBE",
-  "&isin;": "\u2208",
-  "&isinE;": "\u22F9",
-  "&isindot;": "\u22F5",
-  "&isins;": "\u22F4",
-  "&isinsv;": "\u22F3",
-  "&isinv;": "\u2208",
-  "&it;": "\u2062",
-  "&itilde;": "\u0129",
-  "&iukcy;": "\u0456",
-  "&iuml": "\xEF",
-  "&iuml;": "\xEF",
-  "&jcirc;": "\u0135",
-  "&jcy;": "\u0439",
+  "&isin;": "∈",
+  "&isinE;": "⋹",
+  "&isindot;": "⋵",
+  "&isins;": "⋴",
+  "&isinsv;": "⋳",
+  "&isinv;": "∈",
+  "&it;": "⁢",
+  "&itilde;": "ĩ",
+  "&iukcy;": "і",
+  "&iuml": "ï",
+  "&iuml;": "ï",
+  "&jcirc;": "ĵ",
+  "&jcy;": "й",
   "&jfr;": "\uD835\uDD27",
-  "&jmath;": "\u0237",
+  "&jmath;": "ȷ",
   "&jopf;": "\uD835\uDD5B",
   "&jscr;": "\uD835\uDCBF",
-  "&jsercy;": "\u0458",
-  "&jukcy;": "\u0454",
-  "&kappa;": "\u03BA",
-  "&kappav;": "\u03F0",
-  "&kcedil;": "\u0137",
-  "&kcy;": "\u043A",
+  "&jsercy;": "ј",
+  "&jukcy;": "є",
+  "&kappa;": "κ",
+  "&kappav;": "ϰ",
+  "&kcedil;": "ķ",
+  "&kcy;": "к",
   "&kfr;": "\uD835\uDD28",
-  "&kgreen;": "\u0138",
-  "&khcy;": "\u0445",
-  "&kjcy;": "\u045C",
+  "&kgreen;": "ĸ",
+  "&khcy;": "х",
+  "&kjcy;": "ќ",
   "&kopf;": "\uD835\uDD5C",
   "&kscr;": "\uD835\uDCC0",
-  "&lAarr;": "\u21DA",
-  "&lArr;": "\u21D0",
-  "&lAtail;": "\u291B",
-  "&lBarr;": "\u290E",
-  "&lE;": "\u2266",
-  "&lEg;": "\u2A8B",
-  "&lHar;": "\u2962",
-  "&lacute;": "\u013A",
-  "&laemptyv;": "\u29B4",
-  "&lagran;": "\u2112",
-  "&lambda;": "\u03BB",
-  "&lang;": "\u27E8",
-  "&langd;": "\u2991",
-  "&langle;": "\u27E8",
-  "&lap;": "\u2A85",
-  "&laquo": "\xAB",
-  "&laquo;": "\xAB",
-  "&larr;": "\u2190",
-  "&larrb;": "\u21E4",
-  "&larrbfs;": "\u291F",
-  "&larrfs;": "\u291D",
-  "&larrhk;": "\u21A9",
-  "&larrlp;": "\u21AB",
-  "&larrpl;": "\u2939",
-  "&larrsim;": "\u2973",
-  "&larrtl;": "\u21A2",
-  "&lat;": "\u2AAB",
-  "&latail;": "\u2919",
-  "&late;": "\u2AAD",
-  "&lates;": "\u2AAD\uFE00",
-  "&lbarr;": "\u290C",
-  "&lbbrk;": "\u2772",
+  "&lAarr;": "⇚",
+  "&lArr;": "⇐",
+  "&lAtail;": "⤛",
+  "&lBarr;": "⤎",
+  "&lE;": "≦",
+  "&lEg;": "⪋",
+  "&lHar;": "⥢",
+  "&lacute;": "ĺ",
+  "&laemptyv;": "⦴",
+  "&lagran;": "ℒ",
+  "&lambda;": "λ",
+  "&lang;": "⟨",
+  "&langd;": "⦑",
+  "&langle;": "⟨",
+  "&lap;": "⪅",
+  "&laquo": "«",
+  "&laquo;": "«",
+  "&larr;": "←",
+  "&larrb;": "⇤",
+  "&larrbfs;": "⤟",
+  "&larrfs;": "⤝",
+  "&larrhk;": "↩",
+  "&larrlp;": "↫",
+  "&larrpl;": "⤹",
+  "&larrsim;": "⥳",
+  "&larrtl;": "↢",
+  "&lat;": "⪫",
+  "&latail;": "⤙",
+  "&late;": "⪭",
+  "&lates;": "⪭︀",
+  "&lbarr;": "⤌",
+  "&lbbrk;": "❲",
   "&lbrace;": "{",
   "&lbrack;": "[",
-  "&lbrke;": "\u298B",
-  "&lbrksld;": "\u298F",
-  "&lbrkslu;": "\u298D",
-  "&lcaron;": "\u013E",
-  "&lcedil;": "\u013C",
-  "&lceil;": "\u2308",
+  "&lbrke;": "⦋",
+  "&lbrksld;": "⦏",
+  "&lbrkslu;": "⦍",
+  "&lcaron;": "ľ",
+  "&lcedil;": "ļ",
+  "&lceil;": "⌈",
   "&lcub;": "{",
-  "&lcy;": "\u043B",
-  "&ldca;": "\u2936",
-  "&ldquo;": "\u201C",
-  "&ldquor;": "\u201E",
-  "&ldrdhar;": "\u2967",
-  "&ldrushar;": "\u294B",
-  "&ldsh;": "\u21B2",
-  "&le;": "\u2264",
-  "&leftarrow;": "\u2190",
-  "&leftarrowtail;": "\u21A2",
-  "&leftharpoondown;": "\u21BD",
-  "&leftharpoonup;": "\u21BC",
-  "&leftleftarrows;": "\u21C7",
-  "&leftrightarrow;": "\u2194",
-  "&leftrightarrows;": "\u21C6",
-  "&leftrightharpoons;": "\u21CB",
-  "&leftrightsquigarrow;": "\u21AD",
-  "&leftthreetimes;": "\u22CB",
-  "&leg;": "\u22DA",
-  "&leq;": "\u2264",
-  "&leqq;": "\u2266",
-  "&leqslant;": "\u2A7D",
-  "&les;": "\u2A7D",
-  "&lescc;": "\u2AA8",
-  "&lesdot;": "\u2A7F",
-  "&lesdoto;": "\u2A81",
-  "&lesdotor;": "\u2A83",
-  "&lesg;": "\u22DA\uFE00",
-  "&lesges;": "\u2A93",
-  "&lessapprox;": "\u2A85",
-  "&lessdot;": "\u22D6",
-  "&lesseqgtr;": "\u22DA",
-  "&lesseqqgtr;": "\u2A8B",
-  "&lessgtr;": "\u2276",
-  "&lesssim;": "\u2272",
-  "&lfisht;": "\u297C",
-  "&lfloor;": "\u230A",
+  "&lcy;": "л",
+  "&ldca;": "⤶",
+  "&ldquo;": "“",
+  "&ldquor;": "„",
+  "&ldrdhar;": "⥧",
+  "&ldrushar;": "⥋",
+  "&ldsh;": "↲",
+  "&le;": "≤",
+  "&leftarrow;": "←",
+  "&leftarrowtail;": "↢",
+  "&leftharpoondown;": "↽",
+  "&leftharpoonup;": "↼",
+  "&leftleftarrows;": "⇇",
+  "&leftrightarrow;": "↔",
+  "&leftrightarrows;": "⇆",
+  "&leftrightharpoons;": "⇋",
+  "&leftrightsquigarrow;": "↭",
+  "&leftthreetimes;": "⋋",
+  "&leg;": "⋚",
+  "&leq;": "≤",
+  "&leqq;": "≦",
+  "&leqslant;": "⩽",
+  "&les;": "⩽",
+  "&lescc;": "⪨",
+  "&lesdot;": "⩿",
+  "&lesdoto;": "⪁",
+  "&lesdotor;": "⪃",
+  "&lesg;": "⋚︀",
+  "&lesges;": "⪓",
+  "&lessapprox;": "⪅",
+  "&lessdot;": "⋖",
+  "&lesseqgtr;": "⋚",
+  "&lesseqqgtr;": "⪋",
+  "&lessgtr;": "≶",
+  "&lesssim;": "≲",
+  "&lfisht;": "⥼",
+  "&lfloor;": "⌊",
   "&lfr;": "\uD835\uDD29",
-  "&lg;": "\u2276",
-  "&lgE;": "\u2A91",
-  "&lhard;": "\u21BD",
-  "&lharu;": "\u21BC",
-  "&lharul;": "\u296A",
-  "&lhblk;": "\u2584",
-  "&ljcy;": "\u0459",
-  "&ll;": "\u226A",
-  "&llarr;": "\u21C7",
-  "&llcorner;": "\u231E",
-  "&llhard;": "\u296B",
-  "&lltri;": "\u25FA",
-  "&lmidot;": "\u0140",
-  "&lmoust;": "\u23B0",
-  "&lmoustache;": "\u23B0",
-  "&lnE;": "\u2268",
-  "&lnap;": "\u2A89",
-  "&lnapprox;": "\u2A89",
-  "&lne;": "\u2A87",
-  "&lneq;": "\u2A87",
-  "&lneqq;": "\u2268",
-  "&lnsim;": "\u22E6",
-  "&loang;": "\u27EC",
-  "&loarr;": "\u21FD",
-  "&lobrk;": "\u27E6",
-  "&longleftarrow;": "\u27F5",
-  "&longleftrightarrow;": "\u27F7",
-  "&longmapsto;": "\u27FC",
-  "&longrightarrow;": "\u27F6",
-  "&looparrowleft;": "\u21AB",
-  "&looparrowright;": "\u21AC",
-  "&lopar;": "\u2985",
+  "&lg;": "≶",
+  "&lgE;": "⪑",
+  "&lhard;": "↽",
+  "&lharu;": "↼",
+  "&lharul;": "⥪",
+  "&lhblk;": "▄",
+  "&ljcy;": "љ",
+  "&ll;": "≪",
+  "&llarr;": "⇇",
+  "&llcorner;": "⌞",
+  "&llhard;": "⥫",
+  "&lltri;": "◺",
+  "&lmidot;": "ŀ",
+  "&lmoust;": "⎰",
+  "&lmoustache;": "⎰",
+  "&lnE;": "≨",
+  "&lnap;": "⪉",
+  "&lnapprox;": "⪉",
+  "&lne;": "⪇",
+  "&lneq;": "⪇",
+  "&lneqq;": "≨",
+  "&lnsim;": "⋦",
+  "&loang;": "⟬",
+  "&loarr;": "⇽",
+  "&lobrk;": "⟦",
+  "&longleftarrow;": "⟵",
+  "&longleftrightarrow;": "⟷",
+  "&longmapsto;": "⟼",
+  "&longrightarrow;": "⟶",
+  "&looparrowleft;": "↫",
+  "&looparrowright;": "↬",
+  "&lopar;": "⦅",
   "&lopf;": "\uD835\uDD5D",
-  "&loplus;": "\u2A2D",
-  "&lotimes;": "\u2A34",
-  "&lowast;": "\u2217",
+  "&loplus;": "⨭",
+  "&lotimes;": "⨴",
+  "&lowast;": "∗",
   "&lowbar;": "_",
-  "&loz;": "\u25CA",
-  "&lozenge;": "\u25CA",
-  "&lozf;": "\u29EB",
+  "&loz;": "◊",
+  "&lozenge;": "◊",
+  "&lozf;": "⧫",
   "&lpar;": "(",
-  "&lparlt;": "\u2993",
-  "&lrarr;": "\u21C6",
-  "&lrcorner;": "\u231F",
-  "&lrhar;": "\u21CB",
-  "&lrhard;": "\u296D",
-  "&lrm;": "\u200E",
-  "&lrtri;": "\u22BF",
-  "&lsaquo;": "\u2039",
+  "&lparlt;": "⦓",
+  "&lrarr;": "⇆",
+  "&lrcorner;": "⌟",
+  "&lrhar;": "⇋",
+  "&lrhard;": "⥭",
+  "&lrm;": "‎",
+  "&lrtri;": "⊿",
+  "&lsaquo;": "‹",
   "&lscr;": "\uD835\uDCC1",
-  "&lsh;": "\u21B0",
-  "&lsim;": "\u2272",
-  "&lsime;": "\u2A8D",
-  "&lsimg;": "\u2A8F",
+  "&lsh;": "↰",
+  "&lsim;": "≲",
+  "&lsime;": "⪍",
+  "&lsimg;": "⪏",
   "&lsqb;": "[",
-  "&lsquo;": "\u2018",
-  "&lsquor;": "\u201A",
-  "&lstrok;": "\u0142",
+  "&lsquo;": "‘",
+  "&lsquor;": "‚",
+  "&lstrok;": "ł",
   "&lt": "<",
   "&lt;": "<",
-  "&ltcc;": "\u2AA6",
-  "&ltcir;": "\u2A79",
-  "&ltdot;": "\u22D6",
-  "&lthree;": "\u22CB",
-  "&ltimes;": "\u22C9",
-  "&ltlarr;": "\u2976",
-  "&ltquest;": "\u2A7B",
-  "&ltrPar;": "\u2996",
-  "&ltri;": "\u25C3",
-  "&ltrie;": "\u22B4",
-  "&ltrif;": "\u25C2",
-  "&lurdshar;": "\u294A",
-  "&luruhar;": "\u2966",
-  "&lvertneqq;": "\u2268\uFE00",
-  "&lvnE;": "\u2268\uFE00",
-  "&mDDot;": "\u223A",
-  "&macr": "\xAF",
-  "&macr;": "\xAF",
-  "&male;": "\u2642",
-  "&malt;": "\u2720",
-  "&maltese;": "\u2720",
-  "&map;": "\u21A6",
-  "&mapsto;": "\u21A6",
-  "&mapstodown;": "\u21A7",
-  "&mapstoleft;": "\u21A4",
-  "&mapstoup;": "\u21A5",
-  "&marker;": "\u25AE",
-  "&mcomma;": "\u2A29",
-  "&mcy;": "\u043C",
-  "&mdash;": "\u2014",
-  "&measuredangle;": "\u2221",
+  "&ltcc;": "⪦",
+  "&ltcir;": "⩹",
+  "&ltdot;": "⋖",
+  "&lthree;": "⋋",
+  "&ltimes;": "⋉",
+  "&ltlarr;": "⥶",
+  "&ltquest;": "⩻",
+  "&ltrPar;": "⦖",
+  "&ltri;": "◃",
+  "&ltrie;": "⊴",
+  "&ltrif;": "◂",
+  "&lurdshar;": "⥊",
+  "&luruhar;": "⥦",
+  "&lvertneqq;": "≨︀",
+  "&lvnE;": "≨︀",
+  "&mDDot;": "∺",
+  "&macr": "¯",
+  "&macr;": "¯",
+  "&male;": "♂",
+  "&malt;": "✠",
+  "&maltese;": "✠",
+  "&map;": "↦",
+  "&mapsto;": "↦",
+  "&mapstodown;": "↧",
+  "&mapstoleft;": "↤",
+  "&mapstoup;": "↥",
+  "&marker;": "▮",
+  "&mcomma;": "⨩",
+  "&mcy;": "м",
+  "&mdash;": "—",
+  "&measuredangle;": "∡",
   "&mfr;": "\uD835\uDD2A",
-  "&mho;": "\u2127",
-  "&micro": "\xB5",
-  "&micro;": "\xB5",
-  "&mid;": "\u2223",
+  "&mho;": "℧",
+  "&micro": "µ",
+  "&micro;": "µ",
+  "&mid;": "∣",
   "&midast;": "*",
-  "&midcir;": "\u2AF0",
-  "&middot": "\xB7",
-  "&middot;": "\xB7",
-  "&minus;": "\u2212",
-  "&minusb;": "\u229F",
-  "&minusd;": "\u2238",
-  "&minusdu;": "\u2A2A",
-  "&mlcp;": "\u2ADB",
-  "&mldr;": "\u2026",
-  "&mnplus;": "\u2213",
-  "&models;": "\u22A7",
+  "&midcir;": "⫰",
+  "&middot": "·",
+  "&middot;": "·",
+  "&minus;": "−",
+  "&minusb;": "⊟",
+  "&minusd;": "∸",
+  "&minusdu;": "⨪",
+  "&mlcp;": "⫛",
+  "&mldr;": "…",
+  "&mnplus;": "∓",
+  "&models;": "⊧",
   "&mopf;": "\uD835\uDD5E",
-  "&mp;": "\u2213",
+  "&mp;": "∓",
   "&mscr;": "\uD835\uDCC2",
-  "&mstpos;": "\u223E",
-  "&mu;": "\u03BC",
-  "&multimap;": "\u22B8",
-  "&mumap;": "\u22B8",
-  "&nGg;": "\u22D9\u0338",
-  "&nGt;": "\u226B\u20D2",
-  "&nGtv;": "\u226B\u0338",
-  "&nLeftarrow;": "\u21CD",
-  "&nLeftrightarrow;": "\u21CE",
-  "&nLl;": "\u22D8\u0338",
-  "&nLt;": "\u226A\u20D2",
-  "&nLtv;": "\u226A\u0338",
-  "&nRightarrow;": "\u21CF",
-  "&nVDash;": "\u22AF",
-  "&nVdash;": "\u22AE",
-  "&nabla;": "\u2207",
-  "&nacute;": "\u0144",
-  "&nang;": "\u2220\u20D2",
-  "&nap;": "\u2249",
-  "&napE;": "\u2A70\u0338",
-  "&napid;": "\u224B\u0338",
-  "&napos;": "\u0149",
-  "&napprox;": "\u2249",
-  "&natur;": "\u266E",
-  "&natural;": "\u266E",
-  "&naturals;": "\u2115",
-  "&nbsp": "\xA0",
-  "&nbsp;": "\xA0",
-  "&nbump;": "\u224E\u0338",
-  "&nbumpe;": "\u224F\u0338",
-  "&ncap;": "\u2A43",
-  "&ncaron;": "\u0148",
-  "&ncedil;": "\u0146",
-  "&ncong;": "\u2247",
-  "&ncongdot;": "\u2A6D\u0338",
-  "&ncup;": "\u2A42",
-  "&ncy;": "\u043D",
-  "&ndash;": "\u2013",
-  "&ne;": "\u2260",
-  "&neArr;": "\u21D7",
-  "&nearhk;": "\u2924",
-  "&nearr;": "\u2197",
-  "&nearrow;": "\u2197",
-  "&nedot;": "\u2250\u0338",
-  "&nequiv;": "\u2262",
-  "&nesear;": "\u2928",
-  "&nesim;": "\u2242\u0338",
-  "&nexist;": "\u2204",
-  "&nexists;": "\u2204",
+  "&mstpos;": "∾",
+  "&mu;": "μ",
+  "&multimap;": "⊸",
+  "&mumap;": "⊸",
+  "&nGg;": "⋙̸",
+  "&nGt;": "≫⃒",
+  "&nGtv;": "≫̸",
+  "&nLeftarrow;": "⇍",
+  "&nLeftrightarrow;": "⇎",
+  "&nLl;": "⋘̸",
+  "&nLt;": "≪⃒",
+  "&nLtv;": "≪̸",
+  "&nRightarrow;": "⇏",
+  "&nVDash;": "⊯",
+  "&nVdash;": "⊮",
+  "&nabla;": "∇",
+  "&nacute;": "ń",
+  "&nang;": "∠⃒",
+  "&nap;": "≉",
+  "&napE;": "⩰̸",
+  "&napid;": "≋̸",
+  "&napos;": "ŉ",
+  "&napprox;": "≉",
+  "&natur;": "♮",
+  "&natural;": "♮",
+  "&naturals;": "ℕ",
+  "&nbsp": " ",
+  "&nbsp;": " ",
+  "&nbump;": "≎̸",
+  "&nbumpe;": "≏̸",
+  "&ncap;": "⩃",
+  "&ncaron;": "ň",
+  "&ncedil;": "ņ",
+  "&ncong;": "≇",
+  "&ncongdot;": "⩭̸",
+  "&ncup;": "⩂",
+  "&ncy;": "н",
+  "&ndash;": "–",
+  "&ne;": "≠",
+  "&neArr;": "⇗",
+  "&nearhk;": "⤤",
+  "&nearr;": "↗",
+  "&nearrow;": "↗",
+  "&nedot;": "≐̸",
+  "&nequiv;": "≢",
+  "&nesear;": "⤨",
+  "&nesim;": "≂̸",
+  "&nexist;": "∄",
+  "&nexists;": "∄",
   "&nfr;": "\uD835\uDD2B",
-  "&ngE;": "\u2267\u0338",
-  "&nge;": "\u2271",
-  "&ngeq;": "\u2271",
-  "&ngeqq;": "\u2267\u0338",
-  "&ngeqslant;": "\u2A7E\u0338",
-  "&nges;": "\u2A7E\u0338",
-  "&ngsim;": "\u2275",
-  "&ngt;": "\u226F",
-  "&ngtr;": "\u226F",
-  "&nhArr;": "\u21CE",
-  "&nharr;": "\u21AE",
-  "&nhpar;": "\u2AF2",
-  "&ni;": "\u220B",
-  "&nis;": "\u22FC",
-  "&nisd;": "\u22FA",
-  "&niv;": "\u220B",
-  "&njcy;": "\u045A",
-  "&nlArr;": "\u21CD",
-  "&nlE;": "\u2266\u0338",
-  "&nlarr;": "\u219A",
-  "&nldr;": "\u2025",
-  "&nle;": "\u2270",
-  "&nleftarrow;": "\u219A",
-  "&nleftrightarrow;": "\u21AE",
-  "&nleq;": "\u2270",
-  "&nleqq;": "\u2266\u0338",
-  "&nleqslant;": "\u2A7D\u0338",
-  "&nles;": "\u2A7D\u0338",
-  "&nless;": "\u226E",
-  "&nlsim;": "\u2274",
-  "&nlt;": "\u226E",
-  "&nltri;": "\u22EA",
-  "&nltrie;": "\u22EC",
-  "&nmid;": "\u2224",
+  "&ngE;": "≧̸",
+  "&nge;": "≱",
+  "&ngeq;": "≱",
+  "&ngeqq;": "≧̸",
+  "&ngeqslant;": "⩾̸",
+  "&nges;": "⩾̸",
+  "&ngsim;": "≵",
+  "&ngt;": "≯",
+  "&ngtr;": "≯",
+  "&nhArr;": "⇎",
+  "&nharr;": "↮",
+  "&nhpar;": "⫲",
+  "&ni;": "∋",
+  "&nis;": "⋼",
+  "&nisd;": "⋺",
+  "&niv;": "∋",
+  "&njcy;": "њ",
+  "&nlArr;": "⇍",
+  "&nlE;": "≦̸",
+  "&nlarr;": "↚",
+  "&nldr;": "‥",
+  "&nle;": "≰",
+  "&nleftarrow;": "↚",
+  "&nleftrightarrow;": "↮",
+  "&nleq;": "≰",
+  "&nleqq;": "≦̸",
+  "&nleqslant;": "⩽̸",
+  "&nles;": "⩽̸",
+  "&nless;": "≮",
+  "&nlsim;": "≴",
+  "&nlt;": "≮",
+  "&nltri;": "⋪",
+  "&nltrie;": "⋬",
+  "&nmid;": "∤",
   "&nopf;": "\uD835\uDD5F",
-  "&not": "\xAC",
-  "&not;": "\xAC",
-  "&notin;": "\u2209",
-  "&notinE;": "\u22F9\u0338",
-  "&notindot;": "\u22F5\u0338",
-  "&notinva;": "\u2209",
-  "&notinvb;": "\u22F7",
-  "&notinvc;": "\u22F6",
-  "&notni;": "\u220C",
-  "&notniva;": "\u220C",
-  "&notnivb;": "\u22FE",
-  "&notnivc;": "\u22FD",
-  "&npar;": "\u2226",
-  "&nparallel;": "\u2226",
-  "&nparsl;": "\u2AFD\u20E5",
-  "&npart;": "\u2202\u0338",
-  "&npolint;": "\u2A14",
-  "&npr;": "\u2280",
-  "&nprcue;": "\u22E0",
-  "&npre;": "\u2AAF\u0338",
-  "&nprec;": "\u2280",
-  "&npreceq;": "\u2AAF\u0338",
-  "&nrArr;": "\u21CF",
-  "&nrarr;": "\u219B",
-  "&nrarrc;": "\u2933\u0338",
-  "&nrarrw;": "\u219D\u0338",
-  "&nrightarrow;": "\u219B",
-  "&nrtri;": "\u22EB",
-  "&nrtrie;": "\u22ED",
-  "&nsc;": "\u2281",
-  "&nsccue;": "\u22E1",
-  "&nsce;": "\u2AB0\u0338",
+  "&not": "¬",
+  "&not;": "¬",
+  "&notin;": "∉",
+  "&notinE;": "⋹̸",
+  "&notindot;": "⋵̸",
+  "&notinva;": "∉",
+  "&notinvb;": "⋷",
+  "&notinvc;": "⋶",
+  "&notni;": "∌",
+  "&notniva;": "∌",
+  "&notnivb;": "⋾",
+  "&notnivc;": "⋽",
+  "&npar;": "∦",
+  "&nparallel;": "∦",
+  "&nparsl;": "⫽⃥",
+  "&npart;": "∂̸",
+  "&npolint;": "⨔",
+  "&npr;": "⊀",
+  "&nprcue;": "⋠",
+  "&npre;": "⪯̸",
+  "&nprec;": "⊀",
+  "&npreceq;": "⪯̸",
+  "&nrArr;": "⇏",
+  "&nrarr;": "↛",
+  "&nrarrc;": "⤳̸",
+  "&nrarrw;": "↝̸",
+  "&nrightarrow;": "↛",
+  "&nrtri;": "⋫",
+  "&nrtrie;": "⋭",
+  "&nsc;": "⊁",
+  "&nsccue;": "⋡",
+  "&nsce;": "⪰̸",
   "&nscr;": "\uD835\uDCC3",
-  "&nshortmid;": "\u2224",
-  "&nshortparallel;": "\u2226",
-  "&nsim;": "\u2241",
-  "&nsime;": "\u2244",
-  "&nsimeq;": "\u2244",
-  "&nsmid;": "\u2224",
-  "&nspar;": "\u2226",
-  "&nsqsube;": "\u22E2",
-  "&nsqsupe;": "\u22E3",
-  "&nsub;": "\u2284",
-  "&nsubE;": "\u2AC5\u0338",
-  "&nsube;": "\u2288",
-  "&nsubset;": "\u2282\u20D2",
-  "&nsubseteq;": "\u2288",
-  "&nsubseteqq;": "\u2AC5\u0338",
-  "&nsucc;": "\u2281",
-  "&nsucceq;": "\u2AB0\u0338",
-  "&nsup;": "\u2285",
-  "&nsupE;": "\u2AC6\u0338",
-  "&nsupe;": "\u2289",
-  "&nsupset;": "\u2283\u20D2",
-  "&nsupseteq;": "\u2289",
-  "&nsupseteqq;": "\u2AC6\u0338",
-  "&ntgl;": "\u2279",
-  "&ntilde": "\xF1",
-  "&ntilde;": "\xF1",
-  "&ntlg;": "\u2278",
-  "&ntriangleleft;": "\u22EA",
-  "&ntrianglelefteq;": "\u22EC",
-  "&ntriangleright;": "\u22EB",
-  "&ntrianglerighteq;": "\u22ED",
-  "&nu;": "\u03BD",
+  "&nshortmid;": "∤",
+  "&nshortparallel;": "∦",
+  "&nsim;": "≁",
+  "&nsime;": "≄",
+  "&nsimeq;": "≄",
+  "&nsmid;": "∤",
+  "&nspar;": "∦",
+  "&nsqsube;": "⋢",
+  "&nsqsupe;": "⋣",
+  "&nsub;": "⊄",
+  "&nsubE;": "⫅̸",
+  "&nsube;": "⊈",
+  "&nsubset;": "⊂⃒",
+  "&nsubseteq;": "⊈",
+  "&nsubseteqq;": "⫅̸",
+  "&nsucc;": "⊁",
+  "&nsucceq;": "⪰̸",
+  "&nsup;": "⊅",
+  "&nsupE;": "⫆̸",
+  "&nsupe;": "⊉",
+  "&nsupset;": "⊃⃒",
+  "&nsupseteq;": "⊉",
+  "&nsupseteqq;": "⫆̸",
+  "&ntgl;": "≹",
+  "&ntilde": "ñ",
+  "&ntilde;": "ñ",
+  "&ntlg;": "≸",
+  "&ntriangleleft;": "⋪",
+  "&ntrianglelefteq;": "⋬",
+  "&ntriangleright;": "⋫",
+  "&ntrianglerighteq;": "⋭",
+  "&nu;": "ν",
   "&num;": "#",
-  "&numero;": "\u2116",
-  "&numsp;": "\u2007",
-  "&nvDash;": "\u22AD",
-  "&nvHarr;": "\u2904",
-  "&nvap;": "\u224D\u20D2",
-  "&nvdash;": "\u22AC",
-  "&nvge;": "\u2265\u20D2",
-  "&nvgt;": ">\u20D2",
-  "&nvinfin;": "\u29DE",
-  "&nvlArr;": "\u2902",
-  "&nvle;": "\u2264\u20D2",
-  "&nvlt;": "<\u20D2",
-  "&nvltrie;": "\u22B4\u20D2",
-  "&nvrArr;": "\u2903",
-  "&nvrtrie;": "\u22B5\u20D2",
-  "&nvsim;": "\u223C\u20D2",
-  "&nwArr;": "\u21D6",
-  "&nwarhk;": "\u2923",
-  "&nwarr;": "\u2196",
-  "&nwarrow;": "\u2196",
-  "&nwnear;": "\u2927",
-  "&oS;": "\u24C8",
-  "&oacute": "\xF3",
-  "&oacute;": "\xF3",
-  "&oast;": "\u229B",
-  "&ocir;": "\u229A",
-  "&ocirc": "\xF4",
-  "&ocirc;": "\xF4",
-  "&ocy;": "\u043E",
-  "&odash;": "\u229D",
-  "&odblac;": "\u0151",
-  "&odiv;": "\u2A38",
-  "&odot;": "\u2299",
-  "&odsold;": "\u29BC",
-  "&oelig;": "\u0153",
-  "&ofcir;": "\u29BF",
+  "&numero;": "№",
+  "&numsp;": " ",
+  "&nvDash;": "⊭",
+  "&nvHarr;": "⤄",
+  "&nvap;": "≍⃒",
+  "&nvdash;": "⊬",
+  "&nvge;": "≥⃒",
+  "&nvgt;": ">⃒",
+  "&nvinfin;": "⧞",
+  "&nvlArr;": "⤂",
+  "&nvle;": "≤⃒",
+  "&nvlt;": "<⃒",
+  "&nvltrie;": "⊴⃒",
+  "&nvrArr;": "⤃",
+  "&nvrtrie;": "⊵⃒",
+  "&nvsim;": "∼⃒",
+  "&nwArr;": "⇖",
+  "&nwarhk;": "⤣",
+  "&nwarr;": "↖",
+  "&nwarrow;": "↖",
+  "&nwnear;": "⤧",
+  "&oS;": "Ⓢ",
+  "&oacute": "ó",
+  "&oacute;": "ó",
+  "&oast;": "⊛",
+  "&ocir;": "⊚",
+  "&ocirc": "ô",
+  "&ocirc;": "ô",
+  "&ocy;": "о",
+  "&odash;": "⊝",
+  "&odblac;": "ő",
+  "&odiv;": "⨸",
+  "&odot;": "⊙",
+  "&odsold;": "⦼",
+  "&oelig;": "œ",
+  "&ofcir;": "⦿",
   "&ofr;": "\uD835\uDD2C",
-  "&ogon;": "\u02DB",
-  "&ograve": "\xF2",
-  "&ograve;": "\xF2",
-  "&ogt;": "\u29C1",
-  "&ohbar;": "\u29B5",
-  "&ohm;": "\u03A9",
-  "&oint;": "\u222E",
-  "&olarr;": "\u21BA",
-  "&olcir;": "\u29BE",
-  "&olcross;": "\u29BB",
-  "&oline;": "\u203E",
-  "&olt;": "\u29C0",
-  "&omacr;": "\u014D",
-  "&omega;": "\u03C9",
-  "&omicron;": "\u03BF",
-  "&omid;": "\u29B6",
-  "&ominus;": "\u2296",
+  "&ogon;": "˛",
+  "&ograve": "ò",
+  "&ograve;": "ò",
+  "&ogt;": "⧁",
+  "&ohbar;": "⦵",
+  "&ohm;": "Ω",
+  "&oint;": "∮",
+  "&olarr;": "↺",
+  "&olcir;": "⦾",
+  "&olcross;": "⦻",
+  "&oline;": "‾",
+  "&olt;": "⧀",
+  "&omacr;": "ō",
+  "&omega;": "ω",
+  "&omicron;": "ο",
+  "&omid;": "⦶",
+  "&ominus;": "⊖",
   "&oopf;": "\uD835\uDD60",
-  "&opar;": "\u29B7",
-  "&operp;": "\u29B9",
-  "&oplus;": "\u2295",
-  "&or;": "\u2228",
-  "&orarr;": "\u21BB",
-  "&ord;": "\u2A5D",
-  "&order;": "\u2134",
-  "&orderof;": "\u2134",
-  "&ordf": "\xAA",
-  "&ordf;": "\xAA",
-  "&ordm": "\xBA",
-  "&ordm;": "\xBA",
-  "&origof;": "\u22B6",
-  "&oror;": "\u2A56",
-  "&orslope;": "\u2A57",
-  "&orv;": "\u2A5B",
-  "&oscr;": "\u2134",
-  "&oslash": "\xF8",
-  "&oslash;": "\xF8",
-  "&osol;": "\u2298",
-  "&otilde": "\xF5",
-  "&otilde;": "\xF5",
-  "&otimes;": "\u2297",
-  "&otimesas;": "\u2A36",
-  "&ouml": "\xF6",
-  "&ouml;": "\xF6",
-  "&ovbar;": "\u233D",
-  "&par;": "\u2225",
-  "&para": "\xB6",
-  "&para;": "\xB6",
-  "&parallel;": "\u2225",
-  "&parsim;": "\u2AF3",
-  "&parsl;": "\u2AFD",
-  "&part;": "\u2202",
-  "&pcy;": "\u043F",
+  "&opar;": "⦷",
+  "&operp;": "⦹",
+  "&oplus;": "⊕",
+  "&or;": "∨",
+  "&orarr;": "↻",
+  "&ord;": "⩝",
+  "&order;": "ℴ",
+  "&orderof;": "ℴ",
+  "&ordf": "ª",
+  "&ordf;": "ª",
+  "&ordm": "º",
+  "&ordm;": "º",
+  "&origof;": "⊶",
+  "&oror;": "⩖",
+  "&orslope;": "⩗",
+  "&orv;": "⩛",
+  "&oscr;": "ℴ",
+  "&oslash": "ø",
+  "&oslash;": "ø",
+  "&osol;": "⊘",
+  "&otilde": "õ",
+  "&otilde;": "õ",
+  "&otimes;": "⊗",
+  "&otimesas;": "⨶",
+  "&ouml": "ö",
+  "&ouml;": "ö",
+  "&ovbar;": "⌽",
+  "&par;": "∥",
+  "&para": "¶",
+  "&para;": "¶",
+  "&parallel;": "∥",
+  "&parsim;": "⫳",
+  "&parsl;": "⫽",
+  "&part;": "∂",
+  "&pcy;": "п",
   "&percnt;": "%",
   "&period;": ".",
-  "&permil;": "\u2030",
-  "&perp;": "\u22A5",
-  "&pertenk;": "\u2031",
+  "&permil;": "‰",
+  "&perp;": "⊥",
+  "&pertenk;": "‱",
   "&pfr;": "\uD835\uDD2D",
-  "&phi;": "\u03C6",
-  "&phiv;": "\u03D5",
-  "&phmmat;": "\u2133",
-  "&phone;": "\u260E",
-  "&pi;": "\u03C0",
-  "&pitchfork;": "\u22D4",
-  "&piv;": "\u03D6",
-  "&planck;": "\u210F",
-  "&planckh;": "\u210E",
-  "&plankv;": "\u210F",
+  "&phi;": "φ",
+  "&phiv;": "ϕ",
+  "&phmmat;": "ℳ",
+  "&phone;": "☎",
+  "&pi;": "π",
+  "&pitchfork;": "⋔",
+  "&piv;": "ϖ",
+  "&planck;": "ℏ",
+  "&planckh;": "ℎ",
+  "&plankv;": "ℏ",
   "&plus;": "+",
-  "&plusacir;": "\u2A23",
-  "&plusb;": "\u229E",
-  "&pluscir;": "\u2A22",
-  "&plusdo;": "\u2214",
-  "&plusdu;": "\u2A25",
-  "&pluse;": "\u2A72",
-  "&plusmn": "\xB1",
-  "&plusmn;": "\xB1",
-  "&plussim;": "\u2A26",
-  "&plustwo;": "\u2A27",
-  "&pm;": "\xB1",
-  "&pointint;": "\u2A15",
+  "&plusacir;": "⨣",
+  "&plusb;": "⊞",
+  "&pluscir;": "⨢",
+  "&plusdo;": "∔",
+  "&plusdu;": "⨥",
+  "&pluse;": "⩲",
+  "&plusmn": "±",
+  "&plusmn;": "±",
+  "&plussim;": "⨦",
+  "&plustwo;": "⨧",
+  "&pm;": "±",
+  "&pointint;": "⨕",
   "&popf;": "\uD835\uDD61",
-  "&pound": "\xA3",
-  "&pound;": "\xA3",
-  "&pr;": "\u227A",
-  "&prE;": "\u2AB3",
-  "&prap;": "\u2AB7",
-  "&prcue;": "\u227C",
-  "&pre;": "\u2AAF",
-  "&prec;": "\u227A",
-  "&precapprox;": "\u2AB7",
-  "&preccurlyeq;": "\u227C",
-  "&preceq;": "\u2AAF",
-  "&precnapprox;": "\u2AB9",
-  "&precneqq;": "\u2AB5",
-  "&precnsim;": "\u22E8",
-  "&precsim;": "\u227E",
-  "&prime;": "\u2032",
-  "&primes;": "\u2119",
-  "&prnE;": "\u2AB5",
-  "&prnap;": "\u2AB9",
-  "&prnsim;": "\u22E8",
-  "&prod;": "\u220F",
-  "&profalar;": "\u232E",
-  "&profline;": "\u2312",
-  "&profsurf;": "\u2313",
-  "&prop;": "\u221D",
-  "&propto;": "\u221D",
-  "&prsim;": "\u227E",
-  "&prurel;": "\u22B0",
+  "&pound": "£",
+  "&pound;": "£",
+  "&pr;": "≺",
+  "&prE;": "⪳",
+  "&prap;": "⪷",
+  "&prcue;": "≼",
+  "&pre;": "⪯",
+  "&prec;": "≺",
+  "&precapprox;": "⪷",
+  "&preccurlyeq;": "≼",
+  "&preceq;": "⪯",
+  "&precnapprox;": "⪹",
+  "&precneqq;": "⪵",
+  "&precnsim;": "⋨",
+  "&precsim;": "≾",
+  "&prime;": "′",
+  "&primes;": "ℙ",
+  "&prnE;": "⪵",
+  "&prnap;": "⪹",
+  "&prnsim;": "⋨",
+  "&prod;": "∏",
+  "&profalar;": "⌮",
+  "&profline;": "⌒",
+  "&profsurf;": "⌓",
+  "&prop;": "∝",
+  "&propto;": "∝",
+  "&prsim;": "≾",
+  "&prurel;": "⊰",
   "&pscr;": "\uD835\uDCC5",
-  "&psi;": "\u03C8",
-  "&puncsp;": "\u2008",
+  "&psi;": "ψ",
+  "&puncsp;": " ",
   "&qfr;": "\uD835\uDD2E",
-  "&qint;": "\u2A0C",
+  "&qint;": "⨌",
   "&qopf;": "\uD835\uDD62",
-  "&qprime;": "\u2057",
+  "&qprime;": "⁗",
   "&qscr;": "\uD835\uDCC6",
-  "&quaternions;": "\u210D",
-  "&quatint;": "\u2A16",
+  "&quaternions;": "ℍ",
+  "&quatint;": "⨖",
   "&quest;": "?",
-  "&questeq;": "\u225F",
+  "&questeq;": "≟",
   "&quot": '"',
   "&quot;": '"',
-  "&rAarr;": "\u21DB",
-  "&rArr;": "\u21D2",
-  "&rAtail;": "\u291C",
-  "&rBarr;": "\u290F",
-  "&rHar;": "\u2964",
-  "&race;": "\u223D\u0331",
-  "&racute;": "\u0155",
-  "&radic;": "\u221A",
-  "&raemptyv;": "\u29B3",
-  "&rang;": "\u27E9",
-  "&rangd;": "\u2992",
-  "&range;": "\u29A5",
-  "&rangle;": "\u27E9",
-  "&raquo": "\xBB",
-  "&raquo;": "\xBB",
-  "&rarr;": "\u2192",
-  "&rarrap;": "\u2975",
-  "&rarrb;": "\u21E5",
-  "&rarrbfs;": "\u2920",
-  "&rarrc;": "\u2933",
-  "&rarrfs;": "\u291E",
-  "&rarrhk;": "\u21AA",
-  "&rarrlp;": "\u21AC",
-  "&rarrpl;": "\u2945",
-  "&rarrsim;": "\u2974",
-  "&rarrtl;": "\u21A3",
-  "&rarrw;": "\u219D",
-  "&ratail;": "\u291A",
-  "&ratio;": "\u2236",
-  "&rationals;": "\u211A",
-  "&rbarr;": "\u290D",
-  "&rbbrk;": "\u2773",
+  "&rAarr;": "⇛",
+  "&rArr;": "⇒",
+  "&rAtail;": "⤜",
+  "&rBarr;": "⤏",
+  "&rHar;": "⥤",
+  "&race;": "∽̱",
+  "&racute;": "ŕ",
+  "&radic;": "√",
+  "&raemptyv;": "⦳",
+  "&rang;": "⟩",
+  "&rangd;": "⦒",
+  "&range;": "⦥",
+  "&rangle;": "⟩",
+  "&raquo": "»",
+  "&raquo;": "»",
+  "&rarr;": "→",
+  "&rarrap;": "⥵",
+  "&rarrb;": "⇥",
+  "&rarrbfs;": "⤠",
+  "&rarrc;": "⤳",
+  "&rarrfs;": "⤞",
+  "&rarrhk;": "↪",
+  "&rarrlp;": "↬",
+  "&rarrpl;": "⥅",
+  "&rarrsim;": "⥴",
+  "&rarrtl;": "↣",
+  "&rarrw;": "↝",
+  "&ratail;": "⤚",
+  "&ratio;": "∶",
+  "&rationals;": "ℚ",
+  "&rbarr;": "⤍",
+  "&rbbrk;": "❳",
   "&rbrace;": "}",
   "&rbrack;": "]",
-  "&rbrke;": "\u298C",
-  "&rbrksld;": "\u298E",
-  "&rbrkslu;": "\u2990",
-  "&rcaron;": "\u0159",
-  "&rcedil;": "\u0157",
-  "&rceil;": "\u2309",
+  "&rbrke;": "⦌",
+  "&rbrksld;": "⦎",
+  "&rbrkslu;": "⦐",
+  "&rcaron;": "ř",
+  "&rcedil;": "ŗ",
+  "&rceil;": "⌉",
   "&rcub;": "}",
-  "&rcy;": "\u0440",
-  "&rdca;": "\u2937",
-  "&rdldhar;": "\u2969",
-  "&rdquo;": "\u201D",
-  "&rdquor;": "\u201D",
-  "&rdsh;": "\u21B3",
-  "&real;": "\u211C",
-  "&realine;": "\u211B",
-  "&realpart;": "\u211C",
-  "&reals;": "\u211D",
-  "&rect;": "\u25AD",
-  "&reg": "\xAE",
-  "&reg;": "\xAE",
-  "&rfisht;": "\u297D",
-  "&rfloor;": "\u230B",
+  "&rcy;": "р",
+  "&rdca;": "⤷",
+  "&rdldhar;": "⥩",
+  "&rdquo;": "”",
+  "&rdquor;": "”",
+  "&rdsh;": "↳",
+  "&real;": "ℜ",
+  "&realine;": "ℛ",
+  "&realpart;": "ℜ",
+  "&reals;": "ℝ",
+  "&rect;": "▭",
+  "&reg": "®",
+  "&reg;": "®",
+  "&rfisht;": "⥽",
+  "&rfloor;": "⌋",
   "&rfr;": "\uD835\uDD2F",
-  "&rhard;": "\u21C1",
-  "&rharu;": "\u21C0",
-  "&rharul;": "\u296C",
-  "&rho;": "\u03C1",
-  "&rhov;": "\u03F1",
-  "&rightarrow;": "\u2192",
-  "&rightarrowtail;": "\u21A3",
-  "&rightharpoondown;": "\u21C1",
-  "&rightharpoonup;": "\u21C0",
-  "&rightleftarrows;": "\u21C4",
-  "&rightleftharpoons;": "\u21CC",
-  "&rightrightarrows;": "\u21C9",
-  "&rightsquigarrow;": "\u219D",
-  "&rightthreetimes;": "\u22CC",
-  "&ring;": "\u02DA",
-  "&risingdotseq;": "\u2253",
-  "&rlarr;": "\u21C4",
-  "&rlhar;": "\u21CC",
-  "&rlm;": "\u200F",
-  "&rmoust;": "\u23B1",
-  "&rmoustache;": "\u23B1",
-  "&rnmid;": "\u2AEE",
-  "&roang;": "\u27ED",
-  "&roarr;": "\u21FE",
-  "&robrk;": "\u27E7",
-  "&ropar;": "\u2986",
+  "&rhard;": "⇁",
+  "&rharu;": "⇀",
+  "&rharul;": "⥬",
+  "&rho;": "ρ",
+  "&rhov;": "ϱ",
+  "&rightarrow;": "→",
+  "&rightarrowtail;": "↣",
+  "&rightharpoondown;": "⇁",
+  "&rightharpoonup;": "⇀",
+  "&rightleftarrows;": "⇄",
+  "&rightleftharpoons;": "⇌",
+  "&rightrightarrows;": "⇉",
+  "&rightsquigarrow;": "↝",
+  "&rightthreetimes;": "⋌",
+  "&ring;": "˚",
+  "&risingdotseq;": "≓",
+  "&rlarr;": "⇄",
+  "&rlhar;": "⇌",
+  "&rlm;": "‏",
+  "&rmoust;": "⎱",
+  "&rmoustache;": "⎱",
+  "&rnmid;": "⫮",
+  "&roang;": "⟭",
+  "&roarr;": "⇾",
+  "&robrk;": "⟧",
+  "&ropar;": "⦆",
   "&ropf;": "\uD835\uDD63",
-  "&roplus;": "\u2A2E",
-  "&rotimes;": "\u2A35",
+  "&roplus;": "⨮",
+  "&rotimes;": "⨵",
   "&rpar;": ")",
-  "&rpargt;": "\u2994",
-  "&rppolint;": "\u2A12",
-  "&rrarr;": "\u21C9",
-  "&rsaquo;": "\u203A",
+  "&rpargt;": "⦔",
+  "&rppolint;": "⨒",
+  "&rrarr;": "⇉",
+  "&rsaquo;": "›",
   "&rscr;": "\uD835\uDCC7",
-  "&rsh;": "\u21B1",
+  "&rsh;": "↱",
   "&rsqb;": "]",
-  "&rsquo;": "\u2019",
-  "&rsquor;": "\u2019",
-  "&rthree;": "\u22CC",
-  "&rtimes;": "\u22CA",
-  "&rtri;": "\u25B9",
-  "&rtrie;": "\u22B5",
-  "&rtrif;": "\u25B8",
-  "&rtriltri;": "\u29CE",
-  "&ruluhar;": "\u2968",
-  "&rx;": "\u211E",
-  "&sacute;": "\u015B",
-  "&sbquo;": "\u201A",
-  "&sc;": "\u227B",
-  "&scE;": "\u2AB4",
-  "&scap;": "\u2AB8",
-  "&scaron;": "\u0161",
-  "&sccue;": "\u227D",
-  "&sce;": "\u2AB0",
-  "&scedil;": "\u015F",
-  "&scirc;": "\u015D",
-  "&scnE;": "\u2AB6",
-  "&scnap;": "\u2ABA",
-  "&scnsim;": "\u22E9",
-  "&scpolint;": "\u2A13",
-  "&scsim;": "\u227F",
-  "&scy;": "\u0441",
-  "&sdot;": "\u22C5",
-  "&sdotb;": "\u22A1",
-  "&sdote;": "\u2A66",
-  "&seArr;": "\u21D8",
-  "&searhk;": "\u2925",
-  "&searr;": "\u2198",
-  "&searrow;": "\u2198",
-  "&sect": "\xA7",
-  "&sect;": "\xA7",
+  "&rsquo;": "’",
+  "&rsquor;": "’",
+  "&rthree;": "⋌",
+  "&rtimes;": "⋊",
+  "&rtri;": "▹",
+  "&rtrie;": "⊵",
+  "&rtrif;": "▸",
+  "&rtriltri;": "⧎",
+  "&ruluhar;": "⥨",
+  "&rx;": "℞",
+  "&sacute;": "ś",
+  "&sbquo;": "‚",
+  "&sc;": "≻",
+  "&scE;": "⪴",
+  "&scap;": "⪸",
+  "&scaron;": "š",
+  "&sccue;": "≽",
+  "&sce;": "⪰",
+  "&scedil;": "ş",
+  "&scirc;": "ŝ",
+  "&scnE;": "⪶",
+  "&scnap;": "⪺",
+  "&scnsim;": "⋩",
+  "&scpolint;": "⨓",
+  "&scsim;": "≿",
+  "&scy;": "с",
+  "&sdot;": "⋅",
+  "&sdotb;": "⊡",
+  "&sdote;": "⩦",
+  "&seArr;": "⇘",
+  "&searhk;": "⤥",
+  "&searr;": "↘",
+  "&searrow;": "↘",
+  "&sect": "§",
+  "&sect;": "§",
   "&semi;": ";",
-  "&seswar;": "\u2929",
-  "&setminus;": "\u2216",
-  "&setmn;": "\u2216",
-  "&sext;": "\u2736",
+  "&seswar;": "⤩",
+  "&setminus;": "∖",
+  "&setmn;": "∖",
+  "&sext;": "✶",
   "&sfr;": "\uD835\uDD30",
-  "&sfrown;": "\u2322",
-  "&sharp;": "\u266F",
-  "&shchcy;": "\u0449",
-  "&shcy;": "\u0448",
-  "&shortmid;": "\u2223",
-  "&shortparallel;": "\u2225",
-  "&shy": "\xAD",
-  "&shy;": "\xAD",
-  "&sigma;": "\u03C3",
-  "&sigmaf;": "\u03C2",
-  "&sigmav;": "\u03C2",
-  "&sim;": "\u223C",
-  "&simdot;": "\u2A6A",
-  "&sime;": "\u2243",
-  "&simeq;": "\u2243",
-  "&simg;": "\u2A9E",
-  "&simgE;": "\u2AA0",
-  "&siml;": "\u2A9D",
-  "&simlE;": "\u2A9F",
-  "&simne;": "\u2246",
-  "&simplus;": "\u2A24",
-  "&simrarr;": "\u2972",
-  "&slarr;": "\u2190",
-  "&smallsetminus;": "\u2216",
-  "&smashp;": "\u2A33",
-  "&smeparsl;": "\u29E4",
-  "&smid;": "\u2223",
-  "&smile;": "\u2323",
-  "&smt;": "\u2AAA",
-  "&smte;": "\u2AAC",
-  "&smtes;": "\u2AAC\uFE00",
-  "&softcy;": "\u044C",
+  "&sfrown;": "⌢",
+  "&sharp;": "♯",
+  "&shchcy;": "щ",
+  "&shcy;": "ш",
+  "&shortmid;": "∣",
+  "&shortparallel;": "∥",
+  "&shy": "­",
+  "&shy;": "­",
+  "&sigma;": "σ",
+  "&sigmaf;": "ς",
+  "&sigmav;": "ς",
+  "&sim;": "∼",
+  "&simdot;": "⩪",
+  "&sime;": "≃",
+  "&simeq;": "≃",
+  "&simg;": "⪞",
+  "&simgE;": "⪠",
+  "&siml;": "⪝",
+  "&simlE;": "⪟",
+  "&simne;": "≆",
+  "&simplus;": "⨤",
+  "&simrarr;": "⥲",
+  "&slarr;": "←",
+  "&smallsetminus;": "∖",
+  "&smashp;": "⨳",
+  "&smeparsl;": "⧤",
+  "&smid;": "∣",
+  "&smile;": "⌣",
+  "&smt;": "⪪",
+  "&smte;": "⪬",
+  "&smtes;": "⪬︀",
+  "&softcy;": "ь",
   "&sol;": "/",
-  "&solb;": "\u29C4",
-  "&solbar;": "\u233F",
+  "&solb;": "⧄",
+  "&solbar;": "⌿",
   "&sopf;": "\uD835\uDD64",
-  "&spades;": "\u2660",
-  "&spadesuit;": "\u2660",
-  "&spar;": "\u2225",
-  "&sqcap;": "\u2293",
-  "&sqcaps;": "\u2293\uFE00",
-  "&sqcup;": "\u2294",
-  "&sqcups;": "\u2294\uFE00",
-  "&sqsub;": "\u228F",
-  "&sqsube;": "\u2291",
-  "&sqsubset;": "\u228F",
-  "&sqsubseteq;": "\u2291",
-  "&sqsup;": "\u2290",
-  "&sqsupe;": "\u2292",
-  "&sqsupset;": "\u2290",
-  "&sqsupseteq;": "\u2292",
-  "&squ;": "\u25A1",
-  "&square;": "\u25A1",
-  "&squarf;": "\u25AA",
-  "&squf;": "\u25AA",
-  "&srarr;": "\u2192",
+  "&spades;": "♠",
+  "&spadesuit;": "♠",
+  "&spar;": "∥",
+  "&sqcap;": "⊓",
+  "&sqcaps;": "⊓︀",
+  "&sqcup;": "⊔",
+  "&sqcups;": "⊔︀",
+  "&sqsub;": "⊏",
+  "&sqsube;": "⊑",
+  "&sqsubset;": "⊏",
+  "&sqsubseteq;": "⊑",
+  "&sqsup;": "⊐",
+  "&sqsupe;": "⊒",
+  "&sqsupset;": "⊐",
+  "&sqsupseteq;": "⊒",
+  "&squ;": "□",
+  "&square;": "□",
+  "&squarf;": "▪",
+  "&squf;": "▪",
+  "&srarr;": "→",
   "&sscr;": "\uD835\uDCC8",
-  "&ssetmn;": "\u2216",
-  "&ssmile;": "\u2323",
-  "&sstarf;": "\u22C6",
-  "&star;": "\u2606",
-  "&starf;": "\u2605",
-  "&straightepsilon;": "\u03F5",
-  "&straightphi;": "\u03D5",
-  "&strns;": "\xAF",
-  "&sub;": "\u2282",
-  "&subE;": "\u2AC5",
-  "&subdot;": "\u2ABD",
-  "&sube;": "\u2286",
-  "&subedot;": "\u2AC3",
-  "&submult;": "\u2AC1",
-  "&subnE;": "\u2ACB",
-  "&subne;": "\u228A",
-  "&subplus;": "\u2ABF",
-  "&subrarr;": "\u2979",
-  "&subset;": "\u2282",
-  "&subseteq;": "\u2286",
-  "&subseteqq;": "\u2AC5",
-  "&subsetneq;": "\u228A",
-  "&subsetneqq;": "\u2ACB",
-  "&subsim;": "\u2AC7",
-  "&subsub;": "\u2AD5",
-  "&subsup;": "\u2AD3",
-  "&succ;": "\u227B",
-  "&succapprox;": "\u2AB8",
-  "&succcurlyeq;": "\u227D",
-  "&succeq;": "\u2AB0",
-  "&succnapprox;": "\u2ABA",
-  "&succneqq;": "\u2AB6",
-  "&succnsim;": "\u22E9",
-  "&succsim;": "\u227F",
-  "&sum;": "\u2211",
-  "&sung;": "\u266A",
-  "&sup1": "\xB9",
-  "&sup1;": "\xB9",
-  "&sup2": "\xB2",
-  "&sup2;": "\xB2",
-  "&sup3": "\xB3",
-  "&sup3;": "\xB3",
-  "&sup;": "\u2283",
-  "&supE;": "\u2AC6",
-  "&supdot;": "\u2ABE",
-  "&supdsub;": "\u2AD8",
-  "&supe;": "\u2287",
-  "&supedot;": "\u2AC4",
-  "&suphsol;": "\u27C9",
-  "&suphsub;": "\u2AD7",
-  "&suplarr;": "\u297B",
-  "&supmult;": "\u2AC2",
-  "&supnE;": "\u2ACC",
-  "&supne;": "\u228B",
-  "&supplus;": "\u2AC0",
-  "&supset;": "\u2283",
-  "&supseteq;": "\u2287",
-  "&supseteqq;": "\u2AC6",
-  "&supsetneq;": "\u228B",
-  "&supsetneqq;": "\u2ACC",
-  "&supsim;": "\u2AC8",
-  "&supsub;": "\u2AD4",
-  "&supsup;": "\u2AD6",
-  "&swArr;": "\u21D9",
-  "&swarhk;": "\u2926",
-  "&swarr;": "\u2199",
-  "&swarrow;": "\u2199",
-  "&swnwar;": "\u292A",
-  "&szlig": "\xDF",
-  "&szlig;": "\xDF",
-  "&target;": "\u2316",
-  "&tau;": "\u03C4",
-  "&tbrk;": "\u23B4",
-  "&tcaron;": "\u0165",
-  "&tcedil;": "\u0163",
-  "&tcy;": "\u0442",
-  "&tdot;": "\u20DB",
-  "&telrec;": "\u2315",
+  "&ssetmn;": "∖",
+  "&ssmile;": "⌣",
+  "&sstarf;": "⋆",
+  "&star;": "☆",
+  "&starf;": "★",
+  "&straightepsilon;": "ϵ",
+  "&straightphi;": "ϕ",
+  "&strns;": "¯",
+  "&sub;": "⊂",
+  "&subE;": "⫅",
+  "&subdot;": "⪽",
+  "&sube;": "⊆",
+  "&subedot;": "⫃",
+  "&submult;": "⫁",
+  "&subnE;": "⫋",
+  "&subne;": "⊊",
+  "&subplus;": "⪿",
+  "&subrarr;": "⥹",
+  "&subset;": "⊂",
+  "&subseteq;": "⊆",
+  "&subseteqq;": "⫅",
+  "&subsetneq;": "⊊",
+  "&subsetneqq;": "⫋",
+  "&subsim;": "⫇",
+  "&subsub;": "⫕",
+  "&subsup;": "⫓",
+  "&succ;": "≻",
+  "&succapprox;": "⪸",
+  "&succcurlyeq;": "≽",
+  "&succeq;": "⪰",
+  "&succnapprox;": "⪺",
+  "&succneqq;": "⪶",
+  "&succnsim;": "⋩",
+  "&succsim;": "≿",
+  "&sum;": "∑",
+  "&sung;": "♪",
+  "&sup1": "¹",
+  "&sup1;": "¹",
+  "&sup2": "²",
+  "&sup2;": "²",
+  "&sup3": "³",
+  "&sup3;": "³",
+  "&sup;": "⊃",
+  "&supE;": "⫆",
+  "&supdot;": "⪾",
+  "&supdsub;": "⫘",
+  "&supe;": "⊇",
+  "&supedot;": "⫄",
+  "&suphsol;": "⟉",
+  "&suphsub;": "⫗",
+  "&suplarr;": "⥻",
+  "&supmult;": "⫂",
+  "&supnE;": "⫌",
+  "&supne;": "⊋",
+  "&supplus;": "⫀",
+  "&supset;": "⊃",
+  "&supseteq;": "⊇",
+  "&supseteqq;": "⫆",
+  "&supsetneq;": "⊋",
+  "&supsetneqq;": "⫌",
+  "&supsim;": "⫈",
+  "&supsub;": "⫔",
+  "&supsup;": "⫖",
+  "&swArr;": "⇙",
+  "&swarhk;": "⤦",
+  "&swarr;": "↙",
+  "&swarrow;": "↙",
+  "&swnwar;": "⤪",
+  "&szlig": "ß",
+  "&szlig;": "ß",
+  "&target;": "⌖",
+  "&tau;": "τ",
+  "&tbrk;": "⎴",
+  "&tcaron;": "ť",
+  "&tcedil;": "ţ",
+  "&tcy;": "т",
+  "&tdot;": "⃛",
+  "&telrec;": "⌕",
   "&tfr;": "\uD835\uDD31",
-  "&there4;": "\u2234",
-  "&therefore;": "\u2234",
-  "&theta;": "\u03B8",
-  "&thetasym;": "\u03D1",
-  "&thetav;": "\u03D1",
-  "&thickapprox;": "\u2248",
-  "&thicksim;": "\u223C",
-  "&thinsp;": "\u2009",
-  "&thkap;": "\u2248",
-  "&thksim;": "\u223C",
-  "&thorn": "\xFE",
-  "&thorn;": "\xFE",
-  "&tilde;": "\u02DC",
-  "&times": "\xD7",
-  "&times;": "\xD7",
-  "&timesb;": "\u22A0",
-  "&timesbar;": "\u2A31",
-  "&timesd;": "\u2A30",
-  "&tint;": "\u222D",
-  "&toea;": "\u2928",
-  "&top;": "\u22A4",
-  "&topbot;": "\u2336",
-  "&topcir;": "\u2AF1",
+  "&there4;": "∴",
+  "&therefore;": "∴",
+  "&theta;": "θ",
+  "&thetasym;": "ϑ",
+  "&thetav;": "ϑ",
+  "&thickapprox;": "≈",
+  "&thicksim;": "∼",
+  "&thinsp;": " ",
+  "&thkap;": "≈",
+  "&thksim;": "∼",
+  "&thorn": "þ",
+  "&thorn;": "þ",
+  "&tilde;": "˜",
+  "&times": "×",
+  "&times;": "×",
+  "&timesb;": "⊠",
+  "&timesbar;": "⨱",
+  "&timesd;": "⨰",
+  "&tint;": "∭",
+  "&toea;": "⤨",
+  "&top;": "⊤",
+  "&topbot;": "⌶",
+  "&topcir;": "⫱",
   "&topf;": "\uD835\uDD65",
-  "&topfork;": "\u2ADA",
-  "&tosa;": "\u2929",
-  "&tprime;": "\u2034",
-  "&trade;": "\u2122",
-  "&triangle;": "\u25B5",
-  "&triangledown;": "\u25BF",
-  "&triangleleft;": "\u25C3",
-  "&trianglelefteq;": "\u22B4",
-  "&triangleq;": "\u225C",
-  "&triangleright;": "\u25B9",
-  "&trianglerighteq;": "\u22B5",
-  "&tridot;": "\u25EC",
-  "&trie;": "\u225C",
-  "&triminus;": "\u2A3A",
-  "&triplus;": "\u2A39",
-  "&trisb;": "\u29CD",
-  "&tritime;": "\u2A3B",
-  "&trpezium;": "\u23E2",
+  "&topfork;": "⫚",
+  "&tosa;": "⤩",
+  "&tprime;": "‴",
+  "&trade;": "™",
+  "&triangle;": "▵",
+  "&triangledown;": "▿",
+  "&triangleleft;": "◃",
+  "&trianglelefteq;": "⊴",
+  "&triangleq;": "≜",
+  "&triangleright;": "▹",
+  "&trianglerighteq;": "⊵",
+  "&tridot;": "◬",
+  "&trie;": "≜",
+  "&triminus;": "⨺",
+  "&triplus;": "⨹",
+  "&trisb;": "⧍",
+  "&tritime;": "⨻",
+  "&trpezium;": "⏢",
   "&tscr;": "\uD835\uDCC9",
-  "&tscy;": "\u0446",
-  "&tshcy;": "\u045B",
-  "&tstrok;": "\u0167",
-  "&twixt;": "\u226C",
-  "&twoheadleftarrow;": "\u219E",
-  "&twoheadrightarrow;": "\u21A0",
-  "&uArr;": "\u21D1",
-  "&uHar;": "\u2963",
-  "&uacute": "\xFA",
-  "&uacute;": "\xFA",
-  "&uarr;": "\u2191",
-  "&ubrcy;": "\u045E",
-  "&ubreve;": "\u016D",
-  "&ucirc": "\xFB",
-  "&ucirc;": "\xFB",
-  "&ucy;": "\u0443",
-  "&udarr;": "\u21C5",
-  "&udblac;": "\u0171",
-  "&udhar;": "\u296E",
-  "&ufisht;": "\u297E",
+  "&tscy;": "ц",
+  "&tshcy;": "ћ",
+  "&tstrok;": "ŧ",
+  "&twixt;": "≬",
+  "&twoheadleftarrow;": "↞",
+  "&twoheadrightarrow;": "↠",
+  "&uArr;": "⇑",
+  "&uHar;": "⥣",
+  "&uacute": "ú",
+  "&uacute;": "ú",
+  "&uarr;": "↑",
+  "&ubrcy;": "ў",
+  "&ubreve;": "ŭ",
+  "&ucirc": "û",
+  "&ucirc;": "û",
+  "&ucy;": "у",
+  "&udarr;": "⇅",
+  "&udblac;": "ű",
+  "&udhar;": "⥮",
+  "&ufisht;": "⥾",
   "&ufr;": "\uD835\uDD32",
-  "&ugrave": "\xF9",
-  "&ugrave;": "\xF9",
-  "&uharl;": "\u21BF",
-  "&uharr;": "\u21BE",
-  "&uhblk;": "\u2580",
-  "&ulcorn;": "\u231C",
-  "&ulcorner;": "\u231C",
-  "&ulcrop;": "\u230F",
-  "&ultri;": "\u25F8",
-  "&umacr;": "\u016B",
-  "&uml": "\xA8",
-  "&uml;": "\xA8",
-  "&uogon;": "\u0173",
+  "&ugrave": "ù",
+  "&ugrave;": "ù",
+  "&uharl;": "↿",
+  "&uharr;": "↾",
+  "&uhblk;": "▀",
+  "&ulcorn;": "⌜",
+  "&ulcorner;": "⌜",
+  "&ulcrop;": "⌏",
+  "&ultri;": "◸",
+  "&umacr;": "ū",
+  "&uml": "¨",
+  "&uml;": "¨",
+  "&uogon;": "ų",
   "&uopf;": "\uD835\uDD66",
-  "&uparrow;": "\u2191",
-  "&updownarrow;": "\u2195",
-  "&upharpoonleft;": "\u21BF",
-  "&upharpoonright;": "\u21BE",
-  "&uplus;": "\u228E",
-  "&upsi;": "\u03C5",
-  "&upsih;": "\u03D2",
-  "&upsilon;": "\u03C5",
-  "&upuparrows;": "\u21C8",
-  "&urcorn;": "\u231D",
-  "&urcorner;": "\u231D",
-  "&urcrop;": "\u230E",
-  "&uring;": "\u016F",
-  "&urtri;": "\u25F9",
+  "&uparrow;": "↑",
+  "&updownarrow;": "↕",
+  "&upharpoonleft;": "↿",
+  "&upharpoonright;": "↾",
+  "&uplus;": "⊎",
+  "&upsi;": "υ",
+  "&upsih;": "ϒ",
+  "&upsilon;": "υ",
+  "&upuparrows;": "⇈",
+  "&urcorn;": "⌝",
+  "&urcorner;": "⌝",
+  "&urcrop;": "⌎",
+  "&uring;": "ů",
+  "&urtri;": "◹",
   "&uscr;": "\uD835\uDCCA",
-  "&utdot;": "\u22F0",
-  "&utilde;": "\u0169",
-  "&utri;": "\u25B5",
-  "&utrif;": "\u25B4",
-  "&uuarr;": "\u21C8",
-  "&uuml": "\xFC",
-  "&uuml;": "\xFC",
-  "&uwangle;": "\u29A7",
-  "&vArr;": "\u21D5",
-  "&vBar;": "\u2AE8",
-  "&vBarv;": "\u2AE9",
-  "&vDash;": "\u22A8",
-  "&vangrt;": "\u299C",
-  "&varepsilon;": "\u03F5",
-  "&varkappa;": "\u03F0",
-  "&varnothing;": "\u2205",
-  "&varphi;": "\u03D5",
-  "&varpi;": "\u03D6",
-  "&varpropto;": "\u221D",
-  "&varr;": "\u2195",
-  "&varrho;": "\u03F1",
-  "&varsigma;": "\u03C2",
-  "&varsubsetneq;": "\u228A\uFE00",
-  "&varsubsetneqq;": "\u2ACB\uFE00",
-  "&varsupsetneq;": "\u228B\uFE00",
-  "&varsupsetneqq;": "\u2ACC\uFE00",
-  "&vartheta;": "\u03D1",
-  "&vartriangleleft;": "\u22B2",
-  "&vartriangleright;": "\u22B3",
-  "&vcy;": "\u0432",
-  "&vdash;": "\u22A2",
-  "&vee;": "\u2228",
-  "&veebar;": "\u22BB",
-  "&veeeq;": "\u225A",
-  "&vellip;": "\u22EE",
+  "&utdot;": "⋰",
+  "&utilde;": "ũ",
+  "&utri;": "▵",
+  "&utrif;": "▴",
+  "&uuarr;": "⇈",
+  "&uuml": "ü",
+  "&uuml;": "ü",
+  "&uwangle;": "⦧",
+  "&vArr;": "⇕",
+  "&vBar;": "⫨",
+  "&vBarv;": "⫩",
+  "&vDash;": "⊨",
+  "&vangrt;": "⦜",
+  "&varepsilon;": "ϵ",
+  "&varkappa;": "ϰ",
+  "&varnothing;": "∅",
+  "&varphi;": "ϕ",
+  "&varpi;": "ϖ",
+  "&varpropto;": "∝",
+  "&varr;": "↕",
+  "&varrho;": "ϱ",
+  "&varsigma;": "ς",
+  "&varsubsetneq;": "⊊︀",
+  "&varsubsetneqq;": "⫋︀",
+  "&varsupsetneq;": "⊋︀",
+  "&varsupsetneqq;": "⫌︀",
+  "&vartheta;": "ϑ",
+  "&vartriangleleft;": "⊲",
+  "&vartriangleright;": "⊳",
+  "&vcy;": "в",
+  "&vdash;": "⊢",
+  "&vee;": "∨",
+  "&veebar;": "⊻",
+  "&veeeq;": "≚",
+  "&vellip;": "⋮",
   "&verbar;": "|",
   "&vert;": "|",
   "&vfr;": "\uD835\uDD33",
-  "&vltri;": "\u22B2",
-  "&vnsub;": "\u2282\u20D2",
-  "&vnsup;": "\u2283\u20D2",
+  "&vltri;": "⊲",
+  "&vnsub;": "⊂⃒",
+  "&vnsup;": "⊃⃒",
   "&vopf;": "\uD835\uDD67",
-  "&vprop;": "\u221D",
-  "&vrtri;": "\u22B3",
+  "&vprop;": "∝",
+  "&vrtri;": "⊳",
   "&vscr;": "\uD835\uDCCB",
-  "&vsubnE;": "\u2ACB\uFE00",
-  "&vsubne;": "\u228A\uFE00",
-  "&vsupnE;": "\u2ACC\uFE00",
-  "&vsupne;": "\u228B\uFE00",
-  "&vzigzag;": "\u299A",
-  "&wcirc;": "\u0175",
-  "&wedbar;": "\u2A5F",
-  "&wedge;": "\u2227",
-  "&wedgeq;": "\u2259",
-  "&weierp;": "\u2118",
+  "&vsubnE;": "⫋︀",
+  "&vsubne;": "⊊︀",
+  "&vsupnE;": "⫌︀",
+  "&vsupne;": "⊋︀",
+  "&vzigzag;": "⦚",
+  "&wcirc;": "ŵ",
+  "&wedbar;": "⩟",
+  "&wedge;": "∧",
+  "&wedgeq;": "≙",
+  "&weierp;": "℘",
   "&wfr;": "\uD835\uDD34",
   "&wopf;": "\uD835\uDD68",
-  "&wp;": "\u2118",
-  "&wr;": "\u2240",
-  "&wreath;": "\u2240",
+  "&wp;": "℘",
+  "&wr;": "≀",
+  "&wreath;": "≀",
   "&wscr;": "\uD835\uDCCC",
-  "&xcap;": "\u22C2",
-  "&xcirc;": "\u25EF",
-  "&xcup;": "\u22C3",
-  "&xdtri;": "\u25BD",
+  "&xcap;": "⋂",
+  "&xcirc;": "◯",
+  "&xcup;": "⋃",
+  "&xdtri;": "▽",
   "&xfr;": "\uD835\uDD35",
-  "&xhArr;": "\u27FA",
-  "&xharr;": "\u27F7",
-  "&xi;": "\u03BE",
-  "&xlArr;": "\u27F8",
-  "&xlarr;": "\u27F5",
-  "&xmap;": "\u27FC",
-  "&xnis;": "\u22FB",
-  "&xodot;": "\u2A00",
+  "&xhArr;": "⟺",
+  "&xharr;": "⟷",
+  "&xi;": "ξ",
+  "&xlArr;": "⟸",
+  "&xlarr;": "⟵",
+  "&xmap;": "⟼",
+  "&xnis;": "⋻",
+  "&xodot;": "⨀",
   "&xopf;": "\uD835\uDD69",
-  "&xoplus;": "\u2A01",
-  "&xotime;": "\u2A02",
-  "&xrArr;": "\u27F9",
-  "&xrarr;": "\u27F6",
+  "&xoplus;": "⨁",
+  "&xotime;": "⨂",
+  "&xrArr;": "⟹",
+  "&xrarr;": "⟶",
   "&xscr;": "\uD835\uDCCD",
-  "&xsqcup;": "\u2A06",
-  "&xuplus;": "\u2A04",
-  "&xutri;": "\u25B3",
-  "&xvee;": "\u22C1",
-  "&xwedge;": "\u22C0",
-  "&yacute": "\xFD",
-  "&yacute;": "\xFD",
-  "&yacy;": "\u044F",
-  "&ycirc;": "\u0177",
-  "&ycy;": "\u044B",
-  "&yen": "\xA5",
-  "&yen;": "\xA5",
+  "&xsqcup;": "⨆",
+  "&xuplus;": "⨄",
+  "&xutri;": "△",
+  "&xvee;": "⋁",
+  "&xwedge;": "⋀",
+  "&yacute": "ý",
+  "&yacute;": "ý",
+  "&yacy;": "я",
+  "&ycirc;": "ŷ",
+  "&ycy;": "ы",
+  "&yen": "¥",
+  "&yen;": "¥",
   "&yfr;": "\uD835\uDD36",
-  "&yicy;": "\u0457",
+  "&yicy;": "ї",
   "&yopf;": "\uD835\uDD6A",
   "&yscr;": "\uD835\uDCCE",
-  "&yucy;": "\u044E",
-  "&yuml": "\xFF",
-  "&yuml;": "\xFF",
-  "&zacute;": "\u017A",
-  "&zcaron;": "\u017E",
-  "&zcy;": "\u0437",
-  "&zdot;": "\u017C",
-  "&zeetrf;": "\u2128",
-  "&zeta;": "\u03B6",
+  "&yucy;": "ю",
+  "&yuml": "ÿ",
+  "&yuml;": "ÿ",
+  "&zacute;": "ź",
+  "&zcaron;": "ž",
+  "&zcy;": "з",
+  "&zdot;": "ż",
+  "&zeetrf;": "ℨ",
+  "&zeta;": "ζ",
   "&zfr;": "\uD835\uDD37",
-  "&zhcy;": "\u0436",
-  "&zigrarr;": "\u21DD",
+  "&zhcy;": "ж",
+  "&zigrarr;": "⇝",
   "&zopf;": "\uD835\uDD6B",
   "&zscr;": "\uD835\uDCCF",
-  "&zwj;": "\u200D",
-  "&zwnj;": "\u200C"
+  "&zwj;": "‍",
+  "&zwnj;": "‌"
 };
 var html_entities_default = htmlEntities;
 
@@ -32530,7 +33202,7 @@ function decodeHTMLEntities(str) {
     }
     let output = "";
     if (codePoint >= 55296 && codePoint <= 57343 || codePoint > 1114111) {
-      return "\uFFFD";
+      return "�";
     }
     if (codePoint > 65535) {
       codePoint -= 65536;
@@ -33466,676 +34138,9 @@ class PostalMime {
   }
 }
 
-// node_modules/turndown/lib/turndown.es.js
-function extend2(destination) {
-  for (var i = 1;i < arguments.length; i++) {
-    var source = arguments[i];
-    for (var key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key))
-        destination[key] = source[key];
-    }
-  }
-  return destination;
-}
-function repeat(character, count) {
-  return Array(count + 1).join(character);
-}
-function trimLeadingNewlines(string4) {
-  return string4.replace(/^\n*/, "");
-}
-function trimTrailingNewlines(string4) {
-  var indexEnd = string4.length;
-  while (indexEnd > 0 && string4[indexEnd - 1] === `
-`)
-    indexEnd--;
-  return string4.substring(0, indexEnd);
-}
-function trimNewlines(string4) {
-  return trimTrailingNewlines(trimLeadingNewlines(string4));
-}
-var blockElements = ["ADDRESS", "ARTICLE", "ASIDE", "AUDIO", "BLOCKQUOTE", "BODY", "CANVAS", "CENTER", "DD", "DIR", "DIV", "DL", "DT", "FIELDSET", "FIGCAPTION", "FIGURE", "FOOTER", "FORM", "FRAMESET", "H1", "H2", "H3", "H4", "H5", "H6", "HEADER", "HGROUP", "HR", "HTML", "ISINDEX", "LI", "MAIN", "MENU", "NAV", "NOFRAMES", "NOSCRIPT", "OL", "OUTPUT", "P", "PRE", "SECTION", "TABLE", "TBODY", "TD", "TFOOT", "TH", "THEAD", "TR", "UL"];
-function isBlock(node) {
-  return is(node, blockElements);
-}
-var voidElements = ["AREA", "BASE", "BR", "COL", "COMMAND", "EMBED", "HR", "IMG", "INPUT", "KEYGEN", "LINK", "META", "PARAM", "SOURCE", "TRACK", "WBR"];
-function isVoid(node) {
-  return is(node, voidElements);
-}
-function hasVoid(node) {
-  return has(node, voidElements);
-}
-var meaningfulWhenBlankElements = ["A", "TABLE", "THEAD", "TBODY", "TFOOT", "TH", "TD", "IFRAME", "SCRIPT", "AUDIO", "VIDEO"];
-function isMeaningfulWhenBlank(node) {
-  return is(node, meaningfulWhenBlankElements);
-}
-function hasMeaningfulWhenBlank(node) {
-  return has(node, meaningfulWhenBlankElements);
-}
-function is(node, tagNames) {
-  return tagNames.indexOf(node.nodeName) >= 0;
-}
-function has(node, tagNames) {
-  return node.getElementsByTagName && tagNames.some(function(tagName) {
-    return node.getElementsByTagName(tagName).length;
-  });
-}
-var markdownEscapes = [[/\\/g, "\\\\"], [/\*/g, "\\*"], [/^-/g, "\\-"], [/^\+ /g, "\\+ "], [/^(=+)/g, "\\$1"], [/^(#{1,6}) /g, "\\$1 "], [/`/g, "\\`"], [/^~~~/g, "\\~~~"], [/\[/g, "\\["], [/\]/g, "\\]"], [/^>/g, "\\>"], [/_/g, "\\_"], [/^(\d+)\. /g, "$1\\. "]];
-function escapeMarkdown(string4) {
-  return markdownEscapes.reduce(function(accumulator, escape2) {
-    return accumulator.replace(escape2[0], escape2[1]);
-  }, string4);
-}
-var rules = {};
-rules.paragraph = {
-  filter: "p",
-  replacement: function(content) {
-    return `
-
-` + content + `
-
-`;
-  }
-};
-rules.lineBreak = {
-  filter: "br",
-  replacement: function(content, node, options) {
-    return options.br + `
-`;
-  }
-};
-rules.heading = {
-  filter: ["h1", "h2", "h3", "h4", "h5", "h6"],
-  replacement: function(content, node, options) {
-    var hLevel = Number(node.nodeName.charAt(1));
-    if (options.headingStyle === "setext" && hLevel < 3) {
-      var underline = repeat(hLevel === 1 ? "=" : "-", content.length);
-      return `
-
-` + content + `
-` + underline + `
-
-`;
-    } else {
-      return `
-
-` + repeat("#", hLevel) + " " + content + `
-
-`;
-    }
-  }
-};
-rules.blockquote = {
-  filter: "blockquote",
-  replacement: function(content) {
-    content = trimNewlines(content).replace(/^/gm, "> ");
-    return `
-
-` + content + `
-
-`;
-  }
-};
-rules.list = {
-  filter: ["ul", "ol"],
-  replacement: function(content, node) {
-    var parent = node.parentNode;
-    if (parent.nodeName === "LI" && parent.lastElementChild === node) {
-      return `
-` + content;
-    } else {
-      return `
-
-` + content + `
-
-`;
-    }
-  }
-};
-rules.listItem = {
-  filter: "li",
-  replacement: function(content, node, options) {
-    var prefix = options.bulletListMarker + "   ";
-    var parent = node.parentNode;
-    if (parent.nodeName === "OL") {
-      var start = parent.getAttribute("start");
-      var index = Array.prototype.indexOf.call(parent.children, node);
-      prefix = (start ? Number(start) + index : index + 1) + ".  ";
-    }
-    var isParagraph = /\n$/.test(content);
-    content = trimNewlines(content) + (isParagraph ? `
-` : "");
-    content = content.replace(/\n/gm, `
-` + " ".repeat(prefix.length));
-    return prefix + content + (node.nextSibling ? `
-` : "");
-  }
-};
-rules.indentedCodeBlock = {
-  filter: function(node, options) {
-    return options.codeBlockStyle === "indented" && node.nodeName === "PRE" && node.firstChild && node.firstChild.nodeName === "CODE";
-  },
-  replacement: function(content, node, options) {
-    return `
-
-    ` + node.firstChild.textContent.replace(/\n/g, `
-    `) + `
-
-`;
-  }
-};
-rules.fencedCodeBlock = {
-  filter: function(node, options) {
-    return options.codeBlockStyle === "fenced" && node.nodeName === "PRE" && node.firstChild && node.firstChild.nodeName === "CODE";
-  },
-  replacement: function(content, node, options) {
-    var className = node.firstChild.getAttribute("class") || "";
-    var language = (className.match(/language-(\S+)/) || [null, ""])[1];
-    var code = node.firstChild.textContent;
-    var fenceChar = options.fence.charAt(0);
-    var fenceSize = 3;
-    var fenceInCodeRegex = new RegExp("^" + fenceChar + "{3,}", "gm");
-    var match;
-    while (match = fenceInCodeRegex.exec(code)) {
-      if (match[0].length >= fenceSize) {
-        fenceSize = match[0].length + 1;
-      }
-    }
-    var fence = repeat(fenceChar, fenceSize);
-    return `
-
-` + fence + language + `
-` + code.replace(/\n$/, "") + `
-` + fence + `
-
-`;
-  }
-};
-rules.horizontalRule = {
-  filter: "hr",
-  replacement: function(content, node, options) {
-    return `
-
-` + options.hr + `
-
-`;
-  }
-};
-rules.inlineLink = {
-  filter: function(node, options) {
-    return options.linkStyle === "inlined" && node.nodeName === "A" && node.getAttribute("href");
-  },
-  replacement: function(content, node) {
-    var href = escapeLinkDestination(node.getAttribute("href"));
-    var title = escapeLinkTitle(cleanAttribute(node.getAttribute("title")));
-    var titlePart = title ? ' "' + title + '"' : "";
-    return "[" + content + "](" + href + titlePart + ")";
-  }
-};
-rules.referenceLink = {
-  filter: function(node, options) {
-    return options.linkStyle === "referenced" && node.nodeName === "A" && node.getAttribute("href");
-  },
-  replacement: function(content, node, options) {
-    var href = escapeLinkDestination(node.getAttribute("href"));
-    var title = cleanAttribute(node.getAttribute("title"));
-    if (title)
-      title = ' "' + escapeLinkTitle(title) + '"';
-    var replacement;
-    var reference;
-    switch (options.linkReferenceStyle) {
-      case "collapsed":
-        replacement = "[" + content + "][]";
-        reference = "[" + content + "]: " + href + title;
-        break;
-      case "shortcut":
-        replacement = "[" + content + "]";
-        reference = "[" + content + "]: " + href + title;
-        break;
-      default:
-        var id = this.references.length + 1;
-        replacement = "[" + content + "][" + id + "]";
-        reference = "[" + id + "]: " + href + title;
-    }
-    this.references.push(reference);
-    return replacement;
-  },
-  references: [],
-  append: function(options) {
-    var references = "";
-    if (this.references.length) {
-      references = `
-
-` + this.references.join(`
-`) + `
-
-`;
-      this.references = [];
-    }
-    return references;
-  }
-};
-rules.emphasis = {
-  filter: ["em", "i"],
-  replacement: function(content, node, options) {
-    if (!content.trim())
-      return "";
-    return options.emDelimiter + content + options.emDelimiter;
-  }
-};
-rules.strong = {
-  filter: ["strong", "b"],
-  replacement: function(content, node, options) {
-    if (!content.trim())
-      return "";
-    return options.strongDelimiter + content + options.strongDelimiter;
-  }
-};
-rules.code = {
-  filter: function(node) {
-    var hasSiblings = node.previousSibling || node.nextSibling;
-    var isCodeBlock = node.parentNode.nodeName === "PRE" && !hasSiblings;
-    return node.nodeName === "CODE" && !isCodeBlock;
-  },
-  replacement: function(content) {
-    if (!content)
-      return "";
-    content = content.replace(/\r?\n|\r/g, " ");
-    var extraSpace = /^`|^ .*?[^ ].* $|`$/.test(content) ? " " : "";
-    var delimiter = "`";
-    var matches = content.match(/`+/gm) || [];
-    while (matches.indexOf(delimiter) !== -1)
-      delimiter = delimiter + "`";
-    return delimiter + extraSpace + content + extraSpace + delimiter;
-  }
-};
-rules.image = {
-  filter: "img",
-  replacement: function(content, node) {
-    var alt = escapeMarkdown(cleanAttribute(node.getAttribute("alt")));
-    var src = escapeLinkDestination(node.getAttribute("src") || "");
-    var title = cleanAttribute(node.getAttribute("title"));
-    var titlePart = title ? ' "' + escapeLinkTitle(title) + '"' : "";
-    return src ? "![" + alt + "]" + "(" + src + titlePart + ")" : "";
-  }
-};
-function cleanAttribute(attribute) {
-  return attribute ? attribute.replace(/(\n+\s*)+/g, `
-`) : "";
-}
-function escapeLinkDestination(destination) {
-  var escaped = destination.replace(/([<>()])/g, "\\$1");
-  return escaped.indexOf(" ") >= 0 ? "<" + escaped + ">" : escaped;
-}
-function escapeLinkTitle(title) {
-  return title.replace(/"/g, "\\\"");
-}
-function Rules(options) {
-  this.options = options;
-  this._keep = [];
-  this._remove = [];
-  this.blankRule = {
-    replacement: options.blankReplacement
-  };
-  this.keepReplacement = options.keepReplacement;
-  this.defaultRule = {
-    replacement: options.defaultReplacement
-  };
-  this.array = [];
-  for (var key in options.rules)
-    this.array.push(options.rules[key]);
-}
-Rules.prototype = {
-  add: function(key, rule) {
-    this.array.unshift(rule);
-  },
-  keep: function(filter) {
-    this._keep.unshift({
-      filter,
-      replacement: this.keepReplacement
-    });
-  },
-  remove: function(filter) {
-    this._remove.unshift({
-      filter,
-      replacement: function() {
-        return "";
-      }
-    });
-  },
-  forNode: function(node) {
-    if (node.isBlank)
-      return this.blankRule;
-    var rule;
-    if (rule = findRule(this.array, node, this.options))
-      return rule;
-    if (rule = findRule(this._keep, node, this.options))
-      return rule;
-    if (rule = findRule(this._remove, node, this.options))
-      return rule;
-    return this.defaultRule;
-  },
-  forEach: function(fn) {
-    for (var i = 0;i < this.array.length; i++)
-      fn(this.array[i], i);
-  }
-};
-function findRule(rules2, node, options) {
-  for (var i = 0;i < rules2.length; i++) {
-    var rule = rules2[i];
-    if (filterValue(rule, node, options))
-      return rule;
-  }
-  return;
-}
-function filterValue(rule, node, options) {
-  var filter = rule.filter;
-  if (typeof filter === "string") {
-    if (filter === node.nodeName.toLowerCase())
-      return true;
-  } else if (Array.isArray(filter)) {
-    if (filter.indexOf(node.nodeName.toLowerCase()) > -1)
-      return true;
-  } else if (typeof filter === "function") {
-    if (filter.call(rule, node, options))
-      return true;
-  } else {
-    throw new TypeError("`filter` needs to be a string, array, or function");
-  }
-}
-function collapseWhitespace(options) {
-  var element = options.element;
-  var isBlock2 = options.isBlock;
-  var isVoid2 = options.isVoid;
-  var isPre = options.isPre || function(node2) {
-    return node2.nodeName === "PRE";
-  };
-  if (!element.firstChild || isPre(element))
-    return;
-  var prevText = null;
-  var keepLeadingWs = false;
-  var prev = null;
-  var node = next(prev, element, isPre);
-  while (node !== element) {
-    if (node.nodeType === 3 || node.nodeType === 4) {
-      var text = node.data.replace(/[ \r\n\t]+/g, " ");
-      if ((!prevText || / $/.test(prevText.data)) && !keepLeadingWs && text[0] === " ") {
-        text = text.substr(1);
-      }
-      if (!text) {
-        node = remove(node);
-        continue;
-      }
-      node.data = text;
-      prevText = node;
-    } else if (node.nodeType === 1) {
-      if (isBlock2(node) || node.nodeName === "BR") {
-        if (prevText) {
-          prevText.data = prevText.data.replace(/ $/, "");
-        }
-        prevText = null;
-        keepLeadingWs = false;
-      } else if (isVoid2(node) || isPre(node)) {
-        prevText = null;
-        keepLeadingWs = true;
-      } else if (prevText) {
-        keepLeadingWs = false;
-      }
-    } else {
-      node = remove(node);
-      continue;
-    }
-    var nextNode = next(prev, node, isPre);
-    prev = node;
-    node = nextNode;
-  }
-  if (prevText) {
-    prevText.data = prevText.data.replace(/ $/, "");
-    if (!prevText.data) {
-      remove(prevText);
-    }
-  }
-}
-function remove(node) {
-  var next = node.nextSibling || node.parentNode;
-  node.parentNode.removeChild(node);
-  return next;
-}
-function next(prev, current, isPre) {
-  if (prev && prev.parentNode === current || isPre(current)) {
-    return current.nextSibling || current.parentNode;
-  }
-  return current.firstChild || current.nextSibling || current.parentNode;
-}
-var root = typeof window !== "undefined" ? window : {};
-function canParseHTMLNatively() {
-  var Parser = root.DOMParser;
-  var canParse = false;
-  try {
-    if (new Parser().parseFromString("", "text/html")) {
-      canParse = true;
-    }
-  } catch (e) {}
-  return canParse;
-}
-function createHTMLParser() {
-  var Parser = function() {};
-  {
-    var domino = require_lib();
-    Parser.prototype.parseFromString = function(string4) {
-      return domino.createDocument(string4);
-    };
-  }
-  return Parser;
-}
-var HTMLParser = canParseHTMLNatively() ? root.DOMParser : createHTMLParser();
-function RootNode(input, options) {
-  var root2;
-  if (typeof input === "string") {
-    var doc2 = htmlParser().parseFromString('<x-turndown id="turndown-root">' + input + "</x-turndown>", "text/html");
-    root2 = doc2.getElementById("turndown-root");
-  } else {
-    root2 = input.cloneNode(true);
-  }
-  collapseWhitespace({
-    element: root2,
-    isBlock,
-    isVoid,
-    isPre: options.preformattedCode ? isPreOrCode : null
-  });
-  return root2;
-}
-var _htmlParser;
-function htmlParser() {
-  _htmlParser = _htmlParser || new HTMLParser;
-  return _htmlParser;
-}
-function isPreOrCode(node) {
-  return node.nodeName === "PRE" || node.nodeName === "CODE";
-}
-function Node(node, options) {
-  node.isBlock = isBlock(node);
-  node.isCode = node.nodeName === "CODE" || node.parentNode.isCode;
-  node.isBlank = isBlank(node);
-  node.flankingWhitespace = flankingWhitespace(node, options);
-  return node;
-}
-function isBlank(node) {
-  return !isVoid(node) && !isMeaningfulWhenBlank(node) && /^\s*$/i.test(node.textContent) && !hasVoid(node) && !hasMeaningfulWhenBlank(node);
-}
-function flankingWhitespace(node, options) {
-  if (node.isBlock || options.preformattedCode && node.isCode) {
-    return {
-      leading: "",
-      trailing: ""
-    };
-  }
-  var edges = edgeWhitespace(node.textContent);
-  if (edges.leadingAscii && isFlankedByWhitespace("left", node, options)) {
-    edges.leading = edges.leadingNonAscii;
-  }
-  if (edges.trailingAscii && isFlankedByWhitespace("right", node, options)) {
-    edges.trailing = edges.trailingNonAscii;
-  }
-  return {
-    leading: edges.leading,
-    trailing: edges.trailing
-  };
-}
-function edgeWhitespace(string4) {
-  var m = string4.match(/^(([ \t\r\n]*)(\s*))(?:(?=\S)[\s\S]*\S)?((\s*?)([ \t\r\n]*))$/);
-  return {
-    leading: m[1],
-    leadingAscii: m[2],
-    leadingNonAscii: m[3],
-    trailing: m[4],
-    trailingNonAscii: m[5],
-    trailingAscii: m[6]
-  };
-}
-function isFlankedByWhitespace(side, node, options) {
-  var sibling;
-  var regExp;
-  var isFlanked;
-  if (side === "left") {
-    sibling = node.previousSibling;
-    regExp = / $/;
-  } else {
-    sibling = node.nextSibling;
-    regExp = /^ /;
-  }
-  if (sibling) {
-    if (sibling.nodeType === 3) {
-      isFlanked = regExp.test(sibling.nodeValue);
-    } else if (options.preformattedCode && sibling.nodeName === "CODE") {
-      isFlanked = false;
-    } else if (sibling.nodeType === 1 && !isBlock(sibling)) {
-      isFlanked = regExp.test(sibling.textContent);
-    }
-  }
-  return isFlanked;
-}
-var reduce = Array.prototype.reduce;
-function TurndownService(options) {
-  if (!(this instanceof TurndownService))
-    return new TurndownService(options);
-  var defaults = {
-    rules,
-    headingStyle: "setext",
-    hr: "* * *",
-    bulletListMarker: "*",
-    codeBlockStyle: "indented",
-    fence: "```",
-    emDelimiter: "_",
-    strongDelimiter: "**",
-    linkStyle: "inlined",
-    linkReferenceStyle: "full",
-    br: "  ",
-    preformattedCode: false,
-    blankReplacement: function(content, node) {
-      return node.isBlock ? `
-
-` : "";
-    },
-    keepReplacement: function(content, node) {
-      return node.isBlock ? `
-
-` + node.outerHTML + `
-
-` : node.outerHTML;
-    },
-    defaultReplacement: function(content, node) {
-      return node.isBlock ? `
-
-` + content + `
-
-` : content;
-    }
-  };
-  this.options = extend2({}, defaults, options);
-  this.rules = new Rules(this.options);
-}
-TurndownService.prototype = {
-  turndown: function(input) {
-    if (!canConvert(input)) {
-      throw new TypeError(input + " is not a string, or an element/document/fragment node.");
-    }
-    if (input === "")
-      return "";
-    var output = process4.call(this, new RootNode(input, this.options));
-    return postProcess.call(this, output);
-  },
-  use: function(plugin) {
-    if (Array.isArray(plugin)) {
-      for (var i = 0;i < plugin.length; i++)
-        this.use(plugin[i]);
-    } else if (typeof plugin === "function") {
-      plugin(this);
-    } else {
-      throw new TypeError("plugin must be a Function or an Array of Functions");
-    }
-    return this;
-  },
-  addRule: function(key, rule) {
-    this.rules.add(key, rule);
-    return this;
-  },
-  keep: function(filter) {
-    this.rules.keep(filter);
-    return this;
-  },
-  remove: function(filter) {
-    this.rules.remove(filter);
-    return this;
-  },
-  escape: function(string4) {
-    return escapeMarkdown(string4);
-  }
-};
-function process4(parentNode) {
-  var self = this;
-  return reduce.call(parentNode.childNodes, function(output, node) {
-    node = new Node(node, self.options);
-    var replacement = "";
-    if (node.nodeType === 3) {
-      replacement = node.isCode ? node.nodeValue : self.escape(node.nodeValue);
-    } else if (node.nodeType === 1) {
-      replacement = replacementForNode.call(self, node);
-    }
-    return join3(output, replacement);
-  }, "");
-}
-function postProcess(output) {
-  var self = this;
-  this.rules.forEach(function(rule) {
-    if (typeof rule.append === "function") {
-      output = join3(output, rule.append(self.options));
-    }
-  });
-  return output.replace(/^[\t\r\n]+/, "").replace(/[\t\r\n\s]+$/, "");
-}
-function replacementForNode(node) {
-  var rule = this.rules.forNode(node);
-  var content = process4.call(this, node);
-  var whitespace = node.flankingWhitespace;
-  if (whitespace.leading || whitespace.trailing)
-    content = content.trim();
-  return whitespace.leading + rule.replacement(content, node, this.options) + whitespace.trailing;
-}
-function join3(output, replacement) {
-  var s1 = trimTrailingNewlines(output);
-  var s2 = trimLeadingNewlines(replacement);
-  var nls = Math.max(output.length - s1.length, replacement.length - s2.length);
-  var separator = `
-
-`.substring(0, nls);
-  return s1 + separator + s2;
-}
-function canConvert(input) {
-  return input != null && (typeof input === "string" || input.nodeType && (input.nodeType === 1 || input.nodeType === 9 || input.nodeType === 11));
-}
-
 // email-parser.ts
-var turndown = new TurndownService({
+var import_turndown = __toESM(require_turndown_cjs(), 1);
+var turndown = new import_turndown.default({
   headingStyle: "atx",
   codeBlockStyle: "fenced",
   bulletListMarker: "-",
@@ -34252,10 +34257,10 @@ function uniquePath(dir, filename) {
   const dot = filename.lastIndexOf(".");
   const base = dot > 0 ? filename.slice(0, dot) : filename;
   const ext = dot > 0 ? filename.slice(dot) : "";
-  let savePath = join4(dir, filename);
+  let savePath = join3(dir, filename);
   let counter = 1;
   while (existsSync3(savePath)) {
-    savePath = join4(dir, `${base}_${counter}${ext}`);
+    savePath = join3(dir, `${base}_${counter}${ext}`);
     counter++;
   }
   return savePath;
@@ -34264,7 +34269,7 @@ function saveAttachments(attachments, date4) {
   if (attachments.length === 0)
     return [];
   const dateStr = date4.slice(0, 10);
-  const dir = join4(attachmentsDir(), dateStr);
+  const dir = join3(attachmentsDir(), dateStr);
   mkdirSync3(dir, { recursive: true, mode: 448 });
   return attachments.map((a) => {
     const filename = sanitizeFilename(a.filename);
@@ -34280,8 +34285,8 @@ function saveAttachments(attachments, date4) {
 }
 
 // thread.ts
-import { createRequire as createRequire2 } from "module";
-var require3 = createRequire2(import.meta.url);
+import { createRequire as createRequire3 } from "node:module";
+var require3 = createRequire3(import.meta.url);
 var sodium2 = require3("libsodium-wrappers-sumo");
 await sodium2.ready;
 var EMPTY_STORE2 = { threads: {}, messageIndex: {} };
@@ -34785,13 +34790,13 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "send_email",
-      description: "Send a new email. May require owner approval - if so the email is queued (not sent) and you will receive a notification when approved or rejected. Do not tell the user to check their inbox until approval is confirmed. Supports full UTF-8 (including \xE6, \xF8, \xE5). Use on_behalf_of when sending on behalf of the user.",
+      description: "Send a new email. May require owner approval - if so the email is queued (not sent) and you will receive a notification when approved or rejected. Do not tell the user to check their inbox until approval is confirmed. Supports full UTF-8 (including æ, ø, å). Use on_behalf_of when sending on behalf of the user.",
       inputSchema: {
         type: "object",
         properties: {
           to: { type: "string", description: "Recipient email address" },
-          subject: { type: "string", description: "Email subject (UTF-8, supports \xE6\xF8\xE5)" },
-          body: { type: "string", description: "Plain text email body (UTF-8, supports \xE6\xF8\xE5)" },
+          subject: { type: "string", description: "Email subject (UTF-8, supports æøå)" },
+          body: { type: "string", description: "Plain text email body (UTF-8, supports æøå)" },
           html_body: {
             type: "string",
             description: "HTML email body. When provided, sends as HTML with plain text body as fallback."
@@ -34842,12 +34847,12 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "reply_to_email",
-      description: "Reply to an existing email thread. Supports full UTF-8 (including \xE6, \xF8, \xE5).",
+      description: "Reply to an existing email thread. Supports full UTF-8 (including æ, ø, å).",
       inputSchema: {
         type: "object",
         properties: {
           thread_id: { type: "string", description: "Thread ID from the original email notification" },
-          body: { type: "string", description: "Plain text reply body (UTF-8, supports \xE6\xF8\xE5)" }
+          body: { type: "string", description: "Plain text reply body (UTF-8, supports æøå)" }
         },
         required: ["thread_id", "body"]
       }
@@ -34917,8 +34922,8 @@ ${entry.content}`;
       const { to, subject, body, html_body, on_behalf_of, footer_language, attachments, file_paths } = args;
       const allAttachments = [...attachments ?? []];
       if (file_paths?.length) {
-        const { readFile } = await import("fs/promises");
-        const { basename } = await import("path");
+        const { readFile } = await import("node:fs/promises");
+        const { basename } = await import("node:path");
         const mimeMap = {
           pdf: "application/pdf",
           png: "image/png",

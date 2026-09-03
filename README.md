@@ -1,8 +1,16 @@
-# Agentpost - Email Channel for Claude Code
+# Agentpost - Email Channel for AI Agents
 
-Email channel for AI agents. Receive and send email from a running Claude Code session. Encrypted storage, approval flow, file attachments.
+Email channel for AI agents. Receive and send email from a running agent session. Inbound mail is encrypted to the agent's own key, outbound needs owner approval, attachments supported.
 
-## Setup
+Three ways to run it:
+
+| Host | Package | Inbound mail |
+|------|---------|--------------|
+| Claude Code | `plugins/agentpost` (this marketplace) | Pushed as a channel notification |
+| OpenClaw | [`packages/openclaw-agentpost`](packages/openclaw-agentpost) | Pushed as a DM conversation |
+| Any MCP host | `plugins/agentpost` over stdio | Pulled with `check_inbox` |
+
+## Setup (Claude Code)
 
 ```bash
 /plugin marketplace add agentpost-no/claude-code-marketplace
@@ -25,21 +33,40 @@ This registers `my-claude@agentpost.no` and sends a verification link to the own
 | Environment Variable | Default | Description |
 |----------|---------|-------------|
 | `AGENTPOST_WORKER_URL` | `https://api.agentpost.no` | Backend worker URL |
+| `AGENTPOST_HOME` | `~/.claude/channels/agentpost` | Storage root for keys, threads and inbox |
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `send_email` | Send a new email (to, subject, body) |
+| `register_email` | Register the address (username, owner_email) |
+| `send_email` | Send a new email (to, subject, body, attachments) |
 | `reply_to_email` | Reply in an existing thread (thread_id, body) |
+| `check_inbox` | Read unread mail, delivery reports and approval results |
+
+## Other hosts
+
+**OpenClaw** has a native channel plugin - see
+[packages/openclaw-agentpost](packages/openclaw-agentpost).
+
+**Any MCP host** can run the same client over stdio. Build once (`bun run build` in
+`plugins/agentpost`), then point the host at the Node bundle:
+
+```bash
+openclaw mcp add agentpost --command node --arg /path/to/plugins/agentpost/dist/server.node.mjs
+```
+
+Hosts that do not implement the Claude channel notification pull inbound mail with
+`check_inbox`, which returns the full message content. Set `AGENTPOST_HOME` to keep that
+host's keys and threads out of `~/.claude`.
 
 ## How It Works
 
 1. Emails sent to your address arrive at a Cloudflare Worker
 2. The worker encrypts the email with your X25519 public key (sealed box)
 3. Encrypted email is delivered to your local client via WebSocket
-4. The client decrypts locally and presents it to Claude with prompt injection protection
-5. Claude can reply using the tools above
+4. The client decrypts locally and presents it to the agent with prompt injection protection
+5. The agent replies; the worker holds the message for owner approval unless the contact is trusted
 
 ## Security
 
@@ -51,7 +78,7 @@ This registers `my-claude@agentpost.no` and sends a verification link to the own
 
 ## Local Storage
 
-All data under `~/.claude/channels/agentpost/`:
+All data under `~/.claude/channels/agentpost/` (or `AGENTPOST_HOME`):
 
 | Path | Purpose |
 |------|---------|
@@ -60,6 +87,7 @@ All data under `~/.claude/channels/agentpost/`:
 | `keys/hmac.key` | Thread signing key (0o600) |
 | `config.json` | Worker URL, email, agent ID |
 | `threads.json` | Thread context for reply tracking |
+| `inbox.json` | Unread mail and notices, so nothing is lost between sessions |
 | `attachments/` | Saved email attachments |
 
 ## Limitations
