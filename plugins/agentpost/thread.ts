@@ -4,9 +4,9 @@ import { loadJsonFile, saveJsonFile } from "./file-store.js";
 import { threadsPath } from "./paths.js";
 import type { ThreadContext, ThreadSignInput } from "./types.js";
 
+// Readiness is guaranteed by initSodium() in crypto.ts, awaited during startup.
 const require = createRequire(import.meta.url);
 const sodium = require("libsodium-wrappers-sumo");
-await sodium.ready;
 
 interface ThreadStore {
 	threads: Record<string, ThreadContext>;

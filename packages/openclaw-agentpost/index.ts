@@ -1,6 +1,6 @@
 import { defineChannelPluginEntry } from "openclaw/plugin-sdk/channel-core";
 import { agentpostChannelPlugin } from "./src/channel.js";
-import { createAgentpostService } from "./src/service.js";
+import { setPluginApi } from "./src/gateway.js";
 
 export default defineChannelPluginEntry({
 	id: "agentpost",
@@ -8,7 +8,8 @@ export default defineChannelPluginEntry({
 	description: "Email channel for agents. Inbound mail is sealed to the agent's key; the owner approves outbound.",
 	plugin: agentpostChannelPlugin,
 	registerFull(api) {
-		// Only the full runtime opens sockets; discovery and setup modes must not.
-		api.registerService(createAgentpostService(api));
+		// The connection itself is owned by the channel gateway adapter, which OpenClaw
+		// starts per account; this only hands it the runtime it dispatches through.
+		setPluginApi(api);
 	},
 });

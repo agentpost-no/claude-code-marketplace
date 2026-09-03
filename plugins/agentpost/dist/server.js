@@ -29540,7 +29540,13 @@ function inboxPath() {
 // crypto.ts
 var require2 = createRequire(import.meta.url);
 var sodium = require2("libsodium-wrappers-sumo");
-await sodium.ready;
+var ready = null;
+function initSodium() {
+  ready ??= Promise.resolve(sodium.ready).then(() => {
+    return;
+  });
+  return ready;
+}
 function toBase64(data) {
   return sodium.to_base64(data, sodium.base64_variants.ORIGINAL);
 }
@@ -34283,7 +34289,6 @@ function saveAttachments(attachments, date4) {
 import { createRequire as createRequire2 } from "module";
 var require3 = createRequire2(import.meta.url);
 var sodium2 = require3("libsodium-wrappers-sumo");
-await sodium2.ready;
 var EMPTY_STORE2 = { threads: {}, messageIndex: {} };
 var cache2 = null;
 function getStore2() {
@@ -34733,9 +34738,9 @@ function createWsClient(url, agentId, keys, events) {
 }
 
 // server.ts
-var keys = loadOrGenerateKeys();
-var hmacKey = loadOrGenerateHmacKey();
-var publicKeyB64 = toBase64(keys.publicKey);
+var keys;
+var hmacKey;
+var publicKeyB64;
 var config2 = loadConfig();
 var authenticated = false;
 function toolError(message) {
@@ -35157,6 +35162,10 @@ process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 process.stdin.on("end", shutdown);
 async function main() {
+  await initSodium();
+  keys = loadOrGenerateKeys();
+  hmacKey = loadOrGenerateHmacKey();
+  publicKeyB64 = toBase64(keys.publicKey);
   if (config2 && config2.status === "active") {
     startWebSocket(config2);
   } else if (config2 && config2.status === "pending") {

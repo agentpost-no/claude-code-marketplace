@@ -1,7 +1,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { loadOrGenerateHmacKey, loadOrGenerateKeys, toBase64 } from "./crypto.js";
+import { initSodium, loadOrGenerateHmacKey, loadOrGenerateKeys, toBase64 } from "./crypto.js";
 import { appendInboxEntry, takeUnread, unreadCount } from "./inbox.js";
 import { type IncomingMailItem, processIncomingEmail } from "./mail.js";
 import { configPath } from "./paths.js";
@@ -9,13 +9,14 @@ import type { DeliveryNotification, EncryptedEmail } from "./protocol.js";
 import { replyToThread, type SendContext, sendNewEmail } from "./send.js";
 import { getWorkerUrl, loadConfig, register, saveConfig } from "./store.js";
 import { getAllMessageIds } from "./thread.js";
-import type { Config } from "./types.js";
+import type { Config, KeyPair } from "./types.js";
 import { createWsClient } from "./ws-client.js";
 
 // --- State ---
-const keys = loadOrGenerateKeys();
-const hmacKey = loadOrGenerateHmacKey();
-const publicKeyB64 = toBase64(keys.publicKey);
+// Assigned in main() once libsodium is ready; every handler runs after that.
+let keys: KeyPair;
+let hmacKey: Uint8Array;
+let publicKeyB64: string;
 
 let config: Config | null = loadConfig();
 let authenticated = false;
@@ -554,6 +555,11 @@ process.stdin.on("end", shutdown);
 
 // --- Main ---
 async function main() {
+	await initSodium();
+	keys = loadOrGenerateKeys();
+	hmacKey = loadOrGenerateHmacKey();
+	publicKeyB64 = toBase64(keys.publicKey);
+
 	if (config && config.status === "active") {
 		startWebSocket(config);
 	} else if (config && config.status === "pending") {

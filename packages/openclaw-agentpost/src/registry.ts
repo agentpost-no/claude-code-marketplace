@@ -19,6 +19,12 @@ export function getRuntime(accountId?: string | null): MailRuntime | undefined {
 	return runtimes.get(id) ?? runtimes.get(DEFAULT_ACCOUNT_ID);
 }
 
+export function deleteRuntime(accountId: string): MailRuntime | undefined {
+	const runtime = runtimes.get(accountId);
+	runtimes.delete(accountId);
+	return runtime;
+}
+
 export function listRuntimes(): Array<[string, MailRuntime]> {
 	return [...runtimes.entries()];
 }

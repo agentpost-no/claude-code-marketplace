@@ -1,4 +1,4 @@
-import { loadOrGenerateHmacKey, loadOrGenerateKeys, toBase64 } from "../../../plugins/agentpost/crypto.js";
+import { initSodium, loadOrGenerateHmacKey, loadOrGenerateKeys, toBase64 } from "../../../plugins/agentpost/crypto.js";
 import { type IncomingMailItem, processIncomingEmail } from "../../../plugins/agentpost/mail.js";
 import { setStorageHome } from "../../../plugins/agentpost/paths.js";
 import type { DeliveryNotification, SendEmailResult } from "../../../plugins/agentpost/protocol.js";
@@ -22,6 +22,8 @@ export interface MailRuntimeCallbacks {
 	onMail: (item: IncomingMailItem) => Promise<void> | void;
 	/** Delivery report or owner approval result, already formatted for a human. */
 	onNotice: (text: string, meta: Record<string, string>) => Promise<void> | void;
+	/** Socket came up or went away. Drives the host's channel status. */
+	onConnectionChange?: (connected: boolean) => void;
 	log: {
 		info: (message: string) => void;
 		warn: (message: string) => void;
@@ -39,12 +41,34 @@ export interface MailRuntime {
 	send: (params: { to: string; text: string; threadId?: string | null }) => Promise<SendResult & { threadId?: string }>;
 }
 
+/** Ids of notices already handed to the host, newest last. Bounded. */
+const NOTICE_MEMORY = 200;
+
 export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCallbacks): MailRuntime {
 	let ws: WsClient | null = null;
+	const seenNotices: string[] = [];
 	let config: Config | null = null;
 	let keys: KeyPair | null = null;
 	let hmacKey: Uint8Array | null = null;
 	let authenticated = false;
+
+	/**
+	 * Hand a status notice to the host at most once.
+	 *
+	 * The worker re-sends delivery notifications, and each one otherwise starts another
+	 * agent turn for the same event. Ids are derived from the event itself, never from
+	 * the clock, so a repeat is recognisable.
+	 */
+	function emitNotice(id: string, text: string, meta: Record<string, string>): void {
+		if (seenNotices.includes(id)) return;
+		seenNotices.push(id);
+		if (seenNotices.length > NOTICE_MEMORY) seenNotices.splice(0, seenNotices.length - NOTICE_MEMORY);
+		// A host-side failure must never become an unhandled rejection: that takes the
+		// whole gateway process down with it.
+		void Promise.resolve(cb.onNotice(text, { ...meta, id })).catch((err) => {
+			cb.log.error(`notice delivery failed: ${String(err)}`);
+		});
+	}
 
 	function sendContext(): SendContext {
 		if (!config) throw new Error("agentpost is not registered yet");
@@ -94,6 +118,7 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 		ws = createWsClient(cfg.workerUrl, cfg.agentId, activeKeys, {
 			onAuthenticated() {
 				authenticated = true;
+				cb.onConnectionChange?.(true);
 				cb.log.info(`connected as ${cfg.email}`);
 				// Claim our outbound message IDs so replies route to this instance.
 				const messageIds = getAllMessageIds();
@@ -105,6 +130,8 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 					ack: (id) => ws?.send({ type: "email_ack", id }),
 					deliver: (item) => cb.onMail(item),
 					log: (message, err) => cb.log.error(`${message} ${err ? String(err) : ""}`.trim()),
+				}).catch((err) => {
+					cb.log.error(`inbound handling failed: ${String(err)}`);
 				});
 			},
 			onDeliveryNotification(notification: DeliveryNotification) {
@@ -115,11 +142,15 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 					opened: "Opened",
 				};
 				const label = labels[notification.event] ?? notification.event;
-				void cb.onNotice(`[${label}] ${notification.description} (to ${notification.recipient})`, {
-					source: "email",
-					event: notification.event,
-					recipient: notification.recipient,
-				});
+				emitNotice(
+					`notice:${notification.event}:${notification.messageId}`,
+					`[${label}] ${notification.description} (to ${notification.recipient})`,
+					{
+						source: "email",
+						event: notification.event,
+						recipient: notification.recipient,
+					},
+				);
 			},
 			onSendResult(result: SendEmailResult) {
 				const text = result.success
@@ -129,7 +160,7 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 					: `[Email rejected] Your email to ${result.to} ("${result.subject}") was rejected by the owner: ${
 							result.error ?? "no reason given"
 						}.`;
-				void cb.onNotice(text, {
+				emitNotice(`send_result:${result.success ? "approved" : "rejected"}:${result.to}:${result.subject}`, text, {
 					source: "email",
 					event: result.success ? "approved" : "rejected",
 					recipient: result.to,
@@ -143,6 +174,7 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 			},
 			onDisconnect() {
 				authenticated = false;
+				cb.onConnectionChange?.(false);
 			},
 		});
 		ws.connect();
@@ -153,6 +185,8 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 		connected: () => authenticated,
 
 		async start() {
+			// libsodium is loaded lazily; every sync crypto call below depends on it.
+			await initSodium();
 			if (account.home) setStorageHome(account.home);
 			keys = loadOrGenerateKeys();
 			hmacKey = loadOrGenerateHmacKey();

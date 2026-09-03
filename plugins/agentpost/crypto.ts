@@ -6,7 +6,21 @@ import type { KeyPair } from "./types.js";
 
 const require = createRequire(import.meta.url);
 const sodium = require("libsodium-wrappers-sumo");
-await sodium.ready;
+
+let ready: Promise<void> | null = null;
+
+/**
+ * Await once before any other call here.
+ *
+ * Deliberately not a top-level await: a bundled top-level await is illegal in hosts
+ * that wrap plugin modules in a function (OpenClaw's plugin loader does), and it fails
+ * at load time with a bare SyntaxError. An explicit init keeps the same guarantee
+ * without constraining how the bundle is evaluated.
+ */
+export function initSodium(): Promise<void> {
+	ready ??= Promise.resolve(sodium.ready).then(() => undefined);
+	return ready;
+}
 
 export function toBase64(data: Uint8Array): string {
 	return sodium.to_base64(data, sodium.base64_variants.ORIGINAL);

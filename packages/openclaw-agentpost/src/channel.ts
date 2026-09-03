@@ -1,6 +1,8 @@
 import type { ChannelPlugin } from "openclaw/plugin-sdk/channel-core";
 import { createChatChannelPlugin } from "openclaw/plugin-sdk/channel-core";
+import { createChannelMessageAdapterFromOutbound } from "openclaw/plugin-sdk/channel-outbound";
 import { type AgentpostAccount, CHANNEL_ID, inspectAccount, listAccountIds, resolveAccount } from "./account.js";
+import { startAccount, stopAccount } from "./gateway.js";
 import { getRuntime } from "./registry.js";
 
 /**
@@ -12,7 +14,30 @@ import { getRuntime } from "./registry.js";
  */
 
 /** Required surfaces of a channel plugin: identity, capabilities and account config. */
-const base: Pick<ChannelPlugin<AgentpostAccount>, "id" | "meta" | "capabilities" | "config"> = {
+/** One send path, used by both the outbound adapter and the message adapter. */
+async function sendMail(params: {
+	to: string;
+	text: string;
+	accountId?: string | null;
+	threadId?: string | number | null;
+	replyToId?: string | null;
+}) {
+	const runtime = getRuntime(params.accountId);
+	if (!runtime) throw new Error("agentpost channel is not running");
+
+	const threadId = params.threadId != null ? String(params.threadId) : (params.replyToId ?? null);
+	const result = await runtime.send({ to: params.to, text: params.text, threadId });
+	if (!result.success) throw new Error(result.error ?? "agentpost send failed");
+
+	return {
+		messageId: result.messageId ?? result.threadId ?? "",
+		// "awaiting_approval" means the owner still has to release it.
+		status: result.status ?? "sent",
+		threadId: result.threadId,
+	};
+}
+
+const base: Pick<ChannelPlugin<AgentpostAccount>, "id" | "meta" | "capabilities" | "config" | "gateway" | "message"> = {
 	id: CHANNEL_ID,
 	meta: {
 		id: CHANNEL_ID,
@@ -32,6 +57,33 @@ const base: Pick<ChannelPlugin<AgentpostAccount>, "id" | "meta" | "capabilities"
 		edit: false,
 		unsend: false,
 	},
+	gateway: {
+		startAccount,
+		stopAccount,
+	},
+	// Without a message adapter the channel is not a valid target for the message tool
+	// or `openclaw message send`; the outbound adapter alone only covers reply delivery.
+	message: createChannelMessageAdapterFromOutbound({
+		id: CHANNEL_ID,
+		outbound: {
+			async sendText(ctx) {
+				const sent = await sendMail({
+					to: ctx.to,
+					text: ctx.text,
+					accountId: ctx.accountId,
+					threadId: ctx.threadId,
+					replyToId: ctx.replyToId,
+				});
+				// `outcome` is reserved for a provider-confirmed non-send; omitting it means sent.
+				return {
+					channel: CHANNEL_ID,
+					messageId: sent.messageId,
+					target: { kind: "chat" as const, id: ctx.to },
+					meta: { status: sent.status, threadId: sent.threadId },
+				};
+			},
+		},
+	}),
 	config: {
 		listAccountIds,
 		resolveAccount,
@@ -75,22 +127,18 @@ export const agentpostChannelPlugin = createChatChannelPlugin<AgentpostAccount>(
 		// worker adds the branded footer.
 		chunkerMode: "text",
 		async sendText(ctx) {
-			const runtime = getRuntime(ctx.accountId);
-			if (!runtime) throw new Error("agentpost channel is not running");
-
-			const threadId = ctx.threadId != null ? String(ctx.threadId) : (ctx.replyToId ?? null);
-			const result = await runtime.send({ to: ctx.to, text: ctx.text, threadId });
-			if (!result.success) throw new Error(result.error ?? "agentpost send failed");
-
+			const sent = await sendMail({
+				to: ctx.to,
+				text: ctx.text,
+				accountId: ctx.accountId,
+				threadId: ctx.threadId,
+				replyToId: ctx.replyToId,
+			});
 			return {
 				channel: CHANNEL_ID,
-				messageId: result.messageId ?? result.threadId ?? "",
+				messageId: sent.messageId,
 				target: { kind: "chat" as const, id: ctx.to },
-				meta: {
-					// "awaiting_approval" means the owner still has to release it.
-					status: result.status ?? "sent",
-					threadId: result.threadId,
-				},
+				meta: { status: sent.status, threadId: sent.threadId },
 			};
 		},
 	},
