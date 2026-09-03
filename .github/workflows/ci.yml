@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  plugin:
+    name: Claude Code plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+        working-directory: plugins/agentpost
+      - run: bunx typescript@5.9.3 --noEmit -p tsconfig.json
+        working-directory: plugins/agentpost
+      - run: bun run build
+        working-directory: plugins/agentpost
+
+  openclaw:
+    name: OpenClaw plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      # Full install here, openclaw devDependency included: this is the job that proves
+      # the plugin still matches the SDK contract it is compiled against.
+      - run: bun install --frozen-lockfile
+        working-directory: packages/openclaw-agentpost
+      - run: bunx typescript@5.9.3 --noEmit -p tsconfig.json
+        working-directory: packages/openclaw-agentpost
+      - run: bun run build
+        working-directory: packages/openclaw-agentpost
+      - name: Load the built plugin
+        working-directory: packages/openclaw-agentpost
+        # Catches what typecheck cannot: a bundle the host refuses to evaluate, such as
+        # a top-level await that is illegal once the loader wraps the module.
+        run: |
+          node --input-type=module -e "
+            const entry = (await import('./dist/index.mjs')).default;
+            if (entry.id !== 'agentpost') throw new Error('unexpected plugin id: ' + entry.id);
+            if (typeof entry.channelPlugin?.gateway?.startAccount !== 'function') {
+              throw new Error('channel is missing its gateway adapter');
+            }
+            if (typeof entry.channelPlugin?.outbound?.sendText !== 'function') {
+              throw new Error('channel is missing its outbound adapter');
+            }
+            if (!entry.channelPlugin?.message) throw new Error('channel is missing its message adapter');
+            console.log('plugin loads and registers:', entry.id);
+          "

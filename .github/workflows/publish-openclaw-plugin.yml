@@ -1,0 +1,78 @@
+name: Publish OpenClaw plugin
+
+# Publishing happens here, never from a laptop: the registry credential lives only in
+# this repository, and every published tarball is traceable to a commit and a run.
+#
+# Release flow: bump the version in packages/openclaw-agentpost/package.json, merge,
+# then push a tag `openclaw-agentpost-v<version>`. The tag and the manifest version must
+# agree or the run fails before anything is published.
+
+on:
+  push:
+    tags: ["openclaw-agentpost-v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Pack and inspect only, do not publish"
+        type: boolean
+        default: true
+
+defaults:
+  run:
+    working-directory: packages/openclaw-agentpost
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required for npm provenance: the run signs the tarball with its own identity.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          # OpenClaw's own floor, and the runtime the plugin is built for.
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Runtime dependencies only. The openclaw devDependency is a ~200MB download that
+      # the bundle marks external anyway; typecheck against it belongs in CI, not here.
+      - name: Install runtime dependencies
+        run: npm install --omit=dev --ignore-scripts
+
+      - name: Build bundle
+        run: bun run build
+
+      - name: Check tag matches package version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          pkg_version="$(node -p "require('./package.json').version")"
+          tag_version="${GITHUB_REF_NAME#openclaw-agentpost-v}"
+          if [ "$pkg_version" != "$tag_version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package version $pkg_version" >&2
+            exit 1
+          fi
+          manifest_version="$(node -p "require('./openclaw.plugin.json').version")"
+          if [ "$manifest_version" != "$pkg_version" ]; then
+            echo "openclaw.plugin.json version $manifest_version does not match package version $pkg_version" >&2
+            exit 1
+          fi
+
+      # A published tarball is permanent, so show exactly what is in it first.
+      - name: Inspect tarball
+        run: npm pack --dry-run
+
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/') && inputs.dry_run != true
+        # --ignore-scripts: the bundle is already built above, and prepare would rebuild
+        # it without the dev toolchain. --provenance links the tarball to this run.
+        run: npm publish --access public --provenance --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
