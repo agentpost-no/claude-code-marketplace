@@ -91,39 +91,19 @@ export async function startAccount(ctx: GatewayContext): Promise<void> {
 			status({ running: true, connected: runtime.connected(), lastMessageAt: Date.now() });
 		},
 
-		async onNotice(text, meta) {
-			// Delivery reports and approval results come from our own worker over an
-			// authenticated socket, so they are not wrapped as untrusted. They are
-			// dispatched as if from the owner, which is also where a reply belongs.
-			if (!account.ownerEmail || !pluginApi) {
-				log.info(text);
-				return;
-			}
-			await dispatchInboundDirectDmWithRuntime({
-				cfg,
-				runtime: pluginApi.runtime,
-				channel: CHANNEL_ID,
-				channelLabel: CHANNEL_LABEL,
-				accountId,
-				peer: { kind: "direct", id: account.ownerEmail },
-				senderId: account.ownerEmail,
-				senderAddress: account.ownerEmail,
-				recipientAddress: accountAddress(account) ?? runtime.address() ?? "",
-				conversationLabel: "Agentpost status",
-				rawBody: text,
-				// Stable id from the event itself, so a re-sent notice is not a new turn.
-				messageId: meta.id ?? `notice:${meta.event ?? "status"}`,
-				// The worker authenticated this, not an arbitrary sender.
-				inboundAccessAuthorized: true,
-				deliver: async (payload) => {
-					const body = payload.text?.trim();
-					if (!body || !account.ownerEmail) return;
-					const sent = await runtime.send({ to: account.ownerEmail, text: body });
-					if (!sent.success) throw new Error(sent.error ?? "reply failed");
-				},
-				onRecordError: (err) => log.error(`failed to record session: ${String(err)}`),
-				onDispatchError: (err, info) => log.error(`${info.kind} dispatch failed: ${String(err)}`),
-			});
+		onNotice(text, meta) {
+			// Notices are informational and MUST NOT be able to send mail.
+			//
+			// They used to be dispatched as an agent turn whose deliver callback emailed
+			// the owner. Every such email produced its own delivery report, which produced
+			// another notice, which produced another email: a self-feeding loop that sent
+			// 20 messages in seven minutes until the worker's rate limiter stopped it.
+			// Deduplicating notices could never fix it - each delivery report carries the
+			// message id of a *new* email, so every iteration looked like a fresh event.
+			//
+			// The agent does not need a turn to learn that its mail arrived. The record
+			// lives in the local inbox and in the log; nothing here can reach the network.
+			log.info(`${meta.event ?? "status"}: ${text}`);
 		},
 	});
 

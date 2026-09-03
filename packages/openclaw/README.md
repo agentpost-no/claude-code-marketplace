@@ -62,8 +62,17 @@ Outbound: the agent's reply goes back through the worker into the same thread
 (`In-Reply-To` preserved). A brand-new conversation takes its subject from the first line
 of the message.
 
-Delivery reports and approval results arrive as a DM from `ownerEmail`, so the agent
-learns when its mail actually went out.
+Delivery reports and approval results are logged, not dispatched as agent turns.
+
+They used to arrive as a DM from `ownerEmail`, whose reply was emailed back to the owner.
+Every such email produced its own delivery report, which produced another notice, which
+produced another email - a self-feeding loop that sent twenty messages in seven minutes
+before the server's rate limiter stopped it. Deduplicating notices cannot fix that shape,
+because each delivery report carries the message id of a new email. A notice must not be
+able to reach the network at all.
+
+The client also refuses to send to the agent's own address, and caps itself at eight
+sends per minute; the server's limiter protects the server, not your mailbox.
 
 ## Security notes
 
