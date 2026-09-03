@@ -1,0 +1,63 @@
+{
+  "id": "agentpost",
+  "name": "Agentpost",
+  "description": "Email channel for agents. Inbound mail is sealed to the agent's own key before it touches disk; outbound mail needs owner approval.",
+  "version": "0.1.0",
+  "channels": ["agentpost"],
+  "activation": {
+    "onStartup": false,
+    "onChannels": ["agentpost"]
+  },
+  "channelConfigs": {
+    "agentpost": {
+      "label": "Agentpost",
+      "description": "Email address for this agent on agentpost.no.",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "workerUrl": { "type": "string" },
+          "username": { "type": "string" },
+          "home": { "type": "string" },
+          "ownerEmail": { "type": "string" },
+          "displayName": { "type": "string" },
+          "dmPolicy": { "type": "string", "enum": ["allowlist", "open"] },
+          "allowFrom": { "type": "array", "items": { "type": "string" } },
+          "accounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "workerUrl": { "type": "string" },
+                "username": { "type": "string" },
+                "home": { "type": "string" },
+                "ownerEmail": { "type": "string" },
+                "displayName": { "type": "string" },
+                "dmPolicy": { "type": "string", "enum": ["allowlist", "open"] },
+                "allowFrom": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      },
+      "uiHints": {
+        "username": {
+          "label": "Username",
+          "placeholder": "claude"
+        },
+        "allowFrom": {
+          "label": "Allowed senders",
+          "placeholder": "you@example.com"
+        }
+      }
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

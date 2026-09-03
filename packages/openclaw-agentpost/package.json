@@ -1,0 +1,43 @@
+{
+  "name": "@agentpost/openclaw-agentpost",
+  "version": "0.1.0",
+  "description": "Agentpost email channel for OpenClaw. Inbound mail is sealed to the agent's own key; outbound needs owner approval.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "files": ["dist", "openclaw.plugin.json", "README.md"],
+  "engines": {
+    "node": ">=22.22.3"
+  },
+  "openclaw": {
+    "extensions": ["./dist/index.mjs"],
+    "channel": {
+      "id": "agentpost",
+      "label": "Agentpost",
+      "blurb": "Give the agent its own email address on agentpost.no."
+    },
+    "compat": {
+      "pluginApi": ">=2026.8.2",
+      "minGatewayVersion": "2026.8.2"
+    }
+  },
+  "scripts": {
+    "build": "bun build index.ts --target=node --outfile=dist/index.mjs --external openclaw --external libsodium-wrappers-sumo",
+    "typecheck": "tsc --noEmit",
+    "prepare": "bun run build"
+  },
+  "dependencies": {
+    "libsodium-wrappers-sumo": "^0.7.15",
+    "postal-mime": "^2.4.1",
+    "turndown": "^7.2.4"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/turndown": "^5.0.6",
+    "openclaw": "^2026.8.2",
+    "typescript": "^5.9.3"
+  }
+}
