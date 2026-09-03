@@ -6,6 +6,14 @@ name: Publish OpenClaw plugin
 # Release flow: bump the version in packages/openclaw-agentpost/package.json, merge,
 # then push a tag `openclaw-agentpost-v<version>`. The tag and the manifest version must
 # agree or the run fails before anything is published.
+#
+# Two outputs, because OpenClaw cannot install a plugin from git - its installer rejects
+# URLs, git refs and protocol specs, accepting only npm specs, local paths and archives:
+#
+#   1. A GitHub Release carrying the built tarball. Works with no npm account:
+#      download it, then `openclaw plugins install ./<file>.tgz`.
+#   2. An npm publish, when an NPM_TOKEN secret exists. Until then the release step
+#      still runs, so a tag is useful immediately.
 
 on:
   push:
@@ -26,7 +34,8 @@ jobs:
     name: Build and publish
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # Needed to attach the tarball to a release.
+      contents: write
       # Required for npm provenance: the run signs the tarball with its own identity.
       id-token: write
     steps:
@@ -68,11 +77,43 @@ jobs:
           fi
 
       # A published tarball is permanent, so show exactly what is in it first.
-      - name: Inspect tarball
-        run: npm pack --dry-run
+      - name: Build tarball
+        id: pack
+        run: |
+          npm pack --ignore-scripts
+          file="$(ls -1 *.tgz | head -n1)"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+          echo "Contents of $file:"
+          tar tzf "$file"
 
-      - name: Publish
+      - name: Attach tarball to a release
         if: startsWith(github.ref, 'refs/tags/') && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARBALL: ${{ steps.pack.outputs.file }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$TARBALL" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Install with: openclaw plugins install ./$TARBALL --accept-capabilities" \
+            || gh release upload "$GITHUB_REF_NAME" "$TARBALL" --repo "$GITHUB_REPOSITORY" --clobber
+
+      # Publishing is skipped, not failed, while no npm credential exists: the release
+      # above is already a usable distribution channel.
+      - name: Check for npm credentials
+        id: npm
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::NPM_TOKEN is not set; skipping the npm publish."
+          fi
+
+      - name: Publish to npm
+        if: startsWith(github.ref, 'refs/tags/') && inputs.dry_run != true && steps.npm.outputs.available == 'true'
         # --ignore-scripts: the bundle is already built above, and prepare would rebuild
         # it without the dev toolchain. --provenance links the tarball to this run.
         run: npm publish --access public --provenance --ignore-scripts
