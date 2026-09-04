@@ -5,6 +5,12 @@ import { getRuntime } from "./registry.js";
 /**
  * Email-shaped tools, alongside the channel.
  *
+ * These deliberately cannot read from disk. The Claude Code plugin accepts file paths
+ * because there the harness already governs the agent's filesystem access; in OpenClaw
+ * the host owns that policy and hands it over as `mediaReadFile`, which only the channel
+ * path holds. A tool that read any path the agent named would route around it - and the
+ * text that names the path can arrive in an untrusted email.
+ *
  * A channel message is a message: text, a recipient, a thread. Email is not that - it
  * has a subject line, attachments, an HTML alternative, and a sender the recipient
  * reads before anything else. The Claude Code plugin exposes those as tool parameters,
@@ -35,11 +41,6 @@ export function registerTools(api: OpenClawPluginApi): void {
 					description: "Language for the footer. Defaults to 'en'.",
 				}),
 			),
-			file_paths: Type.Optional(
-				Type.Array(Type.String(), {
-					description: "Local file paths to attach. Read and encoded for you; the type comes from the extension.",
-				}),
-			),
 			attachments: Type.Optional(
 				Type.Array(
 					Type.Object({
@@ -47,7 +48,10 @@ export function registerTools(api: OpenClawPluginApi): void {
 						content: Type.String({ description: "File content, base64." }),
 						contentType: Type.String({ description: "MIME type, e.g. 'application/pdf'." }),
 					}),
-					{ description: "Attachments you generated rather than read from disk." },
+					{
+						description:
+							"Attachments, base64. To attach a file from disk, send it through the channel instead: the host reads it under its own sandbox roots, which this tool cannot do.",
+					},
 				),
 			),
 			account: Type.Optional(Type.String({ description: "Account id, when more than one is configured." })),
@@ -58,18 +62,16 @@ export function registerTools(api: OpenClawPluginApi): void {
 			messageId: Type.Optional(Type.String()),
 		}),
 		async execute(_id, params) {
-			const { to, subject, body, html_body, on_behalf_of, footer_language, file_paths, attachments, account } =
-				params as {
-					to: string;
-					subject: string;
-					body: string;
-					html_body?: string;
-					on_behalf_of?: string;
-					footer_language?: "no" | "en";
-					file_paths?: string[];
-					attachments?: Array<{ name: string; content: string; contentType: string }>;
-					account?: string;
-				};
+			const { to, subject, body, html_body, on_behalf_of, footer_language, attachments, account } = params as {
+				to: string;
+				subject: string;
+				body: string;
+				html_body?: string;
+				on_behalf_of?: string;
+				footer_language?: "no" | "en";
+				attachments?: Array<{ name: string; content: string; contentType: string }>;
+				account?: string;
+			};
 
 			const runtime = getRuntime(account);
 			if (!runtime) {
@@ -87,7 +89,6 @@ export function registerTools(api: OpenClawPluginApi): void {
 				html_body,
 				on_behalf_of,
 				footer_language,
-				file_paths,
 				attachments,
 			});
 			if (!result.success) {

@@ -34398,8 +34398,8 @@ async function processIncomingEmail(encrypted, deps) {
 }
 
 // send.ts
-import { basename } from "node:path";
 import { readFile } from "node:fs/promises";
+import { basename } from "node:path";
 var MIME_BY_EXTENSION = {
   pdf: "application/pdf",
   png: "image/png",
@@ -34486,7 +34486,7 @@ async function sendNewEmail(params, ctx) {
   }
   return { ...result, threadId };
 }
-async function replyToThread(threadId, body, ctx) {
+async function replyToThread(threadId, body, ctx, requireApproval) {
   const thread = lookupThread(threadId);
   if (!thread)
     return { success: false, error: `Thread not found: ${threadId}` };
@@ -34498,7 +34498,8 @@ async function replyToThread(threadId, body, ctx) {
     custom_headers: {
       "X-Agentpost-Thread-Id": threadId,
       ...thread.messageId ? { "In-Reply-To": thread.messageId } : {}
-    }
+    },
+    require_approval: requireApproval
   }, ctx);
   if (result.success) {
     storeThreadContext(threadId, {

@@ -1,5 +1,5 @@
-import { basename } from "node:path";
 import { readFile } from "node:fs/promises";
+import { basename } from "node:path";
 import { lookupThread, signThread, storeThreadContext } from "./thread.js";
 
 /** Outbound send over the worker REST API. Shared by every host adapter. */
@@ -18,6 +18,8 @@ export interface SendParams {
 	custom_headers?: Record<string, string>;
 	footer_language?: "no" | "en";
 	attachments?: SendAttachment[];
+	/** Ask the worker for the owner's approval even if the contact is trusted. */
+	require_approval?: boolean;
 }
 
 /**
@@ -154,6 +156,7 @@ export async function replyToThread(
 	threadId: string,
 	body: string,
 	ctx: SendContext,
+	requireApproval?: boolean,
 ): Promise<SendResult & { to?: string; subject?: string }> {
 	const thread = lookupThread(threadId);
 	if (!thread) return { success: false, error: `Thread not found: ${threadId}` };
@@ -168,6 +171,7 @@ export async function replyToThread(
 				"X-Agentpost-Thread-Id": threadId,
 				...(thread.messageId ? { "In-Reply-To": thread.messageId } : {}),
 			},
+			require_approval: requireApproval,
 		},
 		ctx,
 	);

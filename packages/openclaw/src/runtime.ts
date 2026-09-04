@@ -51,6 +51,8 @@ export interface MailRuntime {
 		text: string;
 		threadId?: string | null;
 		attachments?: SendAttachment[];
+		/** For mail the agent did not deliberately compose. See gateway.ts. */
+		requireApproval?: boolean;
 	}) => Promise<SendResult & { threadId?: string }>;
 	/** Compose a real email: subject line, optional HTML alternative, attachments. */
 	sendEmail: (params: {
@@ -280,7 +282,7 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 			authenticated = false;
 		},
 
-		async send({ to, text, threadId, attachments }) {
+		async send({ to, text, threadId, attachments, requireApproval }) {
 			if (!config || !hmacKey) return { success: false, error: "agentpost is not registered yet" };
 
 			const guard = guardSend(to);
@@ -289,12 +291,12 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 			// A known thread id means this is an answer to mail we hold, so keep the
 			// subject and In-Reply-To chain rather than starting a fresh conversation.
 			if (threadId && lookupThread(threadId) && !attachments?.length) {
-				const replied = await replyToThread(threadId, text, sendContext());
+				const replied = await replyToThread(threadId, text, sendContext(), requireApproval);
 				return { ...replied, threadId };
 			}
 
 			return sendNewEmail(
-				{ to, subject: deriveSubject(text), body: text, attachments },
+				{ to, subject: deriveSubject(text), body: text, attachments, require_approval: requireApproval },
 				{ ...sendContext(), fromAddress: config.email, hmacKey },
 			);
 		},

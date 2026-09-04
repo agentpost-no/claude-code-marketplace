@@ -1,7 +1,7 @@
+import { basename } from "node:path";
 import type { ChannelPlugin } from "openclaw/plugin-sdk/channel-core";
 import { createChatChannelPlugin } from "openclaw/plugin-sdk/channel-core";
 import { createChannelMessageAdapterFromOutbound } from "openclaw/plugin-sdk/channel-outbound";
-import { basename } from "node:path";
 import type { SendAttachment } from "../../../plugins/agentpost/send.js";
 import { type AgentpostAccount, CHANNEL_ID, inspectAccount, listAccountIds, resolveAccount } from "./account.js";
 import { startAccount, stopAccount } from "./gateway.js";
@@ -31,24 +31,63 @@ async function readMedia(ctx: {
 	if (!source) return null;
 
 	try {
-		if (/^https?:\/\//i.test(source)) {
-			const res = await fetch(source);
+		if (/^[a-z][a-z0-9+.-]*:/i.test(source)) {
+			const url = new URL(source);
+			// Only http(s), and never an address that resolves inside the network this
+			// process sits in. Attachment content leaves the machine as email, so a
+			// fetch the agent can be talked into is an exfiltration primitive - and the
+			// text that talks it into one arrives as inbound mail.
+			if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+			if (isPrivateHost(url.hostname)) return null;
+
+			const res = await fetch(url, { signal: AbortSignal.timeout(MEDIA_FETCH_TIMEOUT_MS), redirect: "error" });
 			if (!res.ok) return null;
+
+			const declared = Number(res.headers.get("content-length") ?? "0");
+			if (declared > MAX_MEDIA_BYTES) return null;
 			const buf = Buffer.from(await res.arrayBuffer());
-			return {
-				name: basename(new URL(source).pathname) || "attachment",
-				content: buf.toString("base64"),
-				contentType: res.headers.get("content-type")?.split(";")[0] ?? "application/octet-stream",
-			};
+			if (buf.byteLength > MAX_MEDIA_BYTES) return null;
+
+			const name = basename(url.pathname) || "attachment";
+			// The remote's own content-type is its claim, not a fact. The extension is
+			// what a mail client acts on, so the type is derived from the filename and
+			// falls back to octet-stream rather than to whatever the server said.
+			return { name, content: buf.toString("base64"), contentType: mimeFor(name) };
 		}
 
-		// Local path: the host's reader applies its own path policy, so prefer it.
+		// Local path: the host's reader applies its own sandbox roots, so it is the only
+		// way this reads from disk. Without it, nothing is read.
 		if (!ctx.mediaReadFile) return null;
 		const buf = await ctx.mediaReadFile(source);
+		if (buf.byteLength > MAX_MEDIA_BYTES) return null;
 		return { name: basename(source) || "attachment", content: buf.toString("base64"), contentType: mimeFor(source) };
 	} catch {
 		return null;
 	}
+}
+
+/** Hosts that must never be fetched: loopback, link-local, and the private ranges. */
+function isPrivateHost(hostname: string): boolean {
+	const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+	if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".internal")) return true;
+	// IPv6 loopback, unique-local (fc00::/7) and link-local (fe80::/10).
+	if (host === "::1" || /^f[cd][0-9a-f]{2}:/.test(host) || /^fe[89ab][0-9a-f]:/.test(host)) return true;
+	// IPv4-mapped IPv6 falls back to the v4 rules below.
+	const v4 = host.startsWith("::ffff:") ? host.slice(7) : host;
+	const parts = v4.split(".");
+	if (parts.length !== 4 || parts.some((p) => !/^\d{1,3}$/.test(p))) return false;
+	const [a, b] = parts.map(Number);
+	if (parts.some((p) => Number(p) > 255)) return true;
+	return (
+		a === 0 || // this network
+		a === 10 || // private
+		a === 127 || // loopback
+		(a === 100 && b >= 64 && b <= 127) || // carrier-grade NAT
+		(a === 169 && b === 254) || // link-local, incl. cloud metadata
+		(a === 172 && b >= 16 && b <= 31) || // private
+		(a === 192 && b === 168) || // private
+		a >= 224 // multicast and reserved
+	);
 }
 
 /** Same short table the core uses; duplicated here only for the URL-less local path. */
@@ -67,6 +106,10 @@ function mimeFor(path: string): string {
 	};
 	return byExtension[path.split(".").pop()?.toLowerCase() ?? ""] ?? "application/octet-stream";
 }
+
+/** Attachments are capped well under the worker's own 8 MB ceiling. */
+const MAX_MEDIA_BYTES = 6 * 1024 * 1024;
+const MEDIA_FETCH_TIMEOUT_MS = 10_000;
 
 /** One send path, used by both the outbound adapter and the message adapter. */
 async function sendMail(params: {
