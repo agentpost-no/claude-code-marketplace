@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "channels": ["agentpost"],
   "contracts": {
-    "tools": ["agentpost_send_email", "agentpost_check_inbox"]
+    "tools": ["agentpost_send_email", "agentpost_reply", "agentpost_check_inbox"]
   },
   "activation": {
     "onStartup": true,

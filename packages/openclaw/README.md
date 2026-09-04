@@ -51,20 +51,21 @@ verification link; the channel connects by itself once that link is clicked.
 
 Each account gets its own storage root, because the keypair *is* the identity.
 
-## Two surfaces, on purpose
+## Inbound informs, sending is deliberate
 
-The channel carries the conversation: inbound mail arrives as a DM and a reply in that
-thread goes back as a reply. That is what a channel is good at.
-
-But a channel message has no subject line, and email without one is a worse email. So the
-plugin also registers tools, the same shape the Claude Code plugin exposes:
+Inbound mail is not a thread you answer by talking. Nobody sits in an agentpost
+conversation: you talk to your agent where you already do - Telegram, WhatsApp, the web
+chat - and an arriving email surfaces in that same session. Replying is a tool call:
 
 | Tool | For |
 | --- | --- |
-| `agentpost_send_email` | A real email: subject, plain text, optional HTML alternative, on-behalf-of, footer language |
+| `agentpost_send_email` | A new email: subject, body, optional HTML alternative, attachments, on-behalf-of, footer language |
+| `agentpost_reply` | A reply inside an existing thread, keeping its subject and In-Reply-To chain |
 | `agentpost_check_inbox` | Unread mail and notices, for when the gateway was down |
 
-Replying stays conversational - answering in the thread is what the channel is for.
+The alternative - delivering whatever the agent said in that session straight back to the
+sender - meant a remark meant for you left as mail, and instructions smuggled into the
+email being answered had an unattended path out. Sending is an act, not a side effect.
 
 ## How mail flows
 

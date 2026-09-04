@@ -51,8 +51,6 @@ export interface MailRuntime {
 		text: string;
 		threadId?: string | null;
 		attachments?: SendAttachment[];
-		/** For mail the agent did not deliberately compose. See gateway.ts. */
-		requireApproval?: boolean;
 	}) => Promise<SendResult & { threadId?: string }>;
 	/** Compose a real email: subject line, optional HTML alternative, attachments. */
 	sendEmail: (params: {
@@ -67,6 +65,8 @@ export interface MailRuntime {
 		/** Already-encoded blobs, for content the agent generated rather than read. */
 		attachments?: SendAttachment[];
 	}) => Promise<SendResult & { threadId?: string }>;
+	/** Reply inside a known thread, keeping the subject and the In-Reply-To chain. */
+	reply: (params: { threadId: string; body: string }) => Promise<SendResult & { to?: string; subject?: string }>;
 	/** Unread inbound mail and notices, marked read as they are returned. */
 	readInbox: (limit: number) => { taken: InboxEntry[]; remaining: number };
 }
@@ -282,7 +282,7 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 			authenticated = false;
 		},
 
-		async send({ to, text, threadId, attachments, requireApproval }) {
+		async send({ to, text, threadId, attachments }) {
 			if (!config || !hmacKey) return { success: false, error: "agentpost is not registered yet" };
 
 			const guard = guardSend(to);
@@ -291,12 +291,12 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 			// A known thread id means this is an answer to mail we hold, so keep the
 			// subject and In-Reply-To chain rather than starting a fresh conversation.
 			if (threadId && lookupThread(threadId) && !attachments?.length) {
-				const replied = await replyToThread(threadId, text, sendContext(), requireApproval);
+				const replied = await replyToThread(threadId, text, sendContext());
 				return { ...replied, threadId };
 			}
 
 			return sendNewEmail(
-				{ to, subject: deriveSubject(text), body: text, attachments, require_approval: requireApproval },
+				{ to, subject: deriveSubject(text), body: text, attachments },
 				{ ...sendContext(), fromAddress: config.email, hmacKey },
 			);
 		},
@@ -319,6 +319,15 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 				{ ...params, attachments: all.length > 0 ? all : undefined },
 				{ ...sendContext(), fromAddress: config.email, hmacKey },
 			);
+		},
+
+		async reply({ threadId, body }) {
+			if (!config) return { success: false, error: "agentpost is not registered yet" };
+			const thread = lookupThread(threadId);
+			if (!thread) return { success: false, error: `Thread not found: ${threadId}` };
+			const guard = guardSend(thread.to);
+			if (guard) return guard;
+			return replyToThread(threadId, body, sendContext());
 		},
 
 		readInbox(limit) {

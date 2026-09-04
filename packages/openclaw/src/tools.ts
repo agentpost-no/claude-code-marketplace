@@ -120,6 +120,52 @@ export function registerTools(api: OpenClawPluginApi): void {
 	});
 
 	api.registerTool({
+		name: "agentpost_reply",
+		label: "Reply to email",
+		description:
+			"Reply inside an existing email thread, keeping its subject and threading. Use the thread id from the message you are answering. Inbound mail arrives as a notification, not as a thread you can answer by talking - replying is this call. The owner approves outbound mail unless the recipient is a trusted contact.",
+		parameters: Type.Object({
+			thread_id: Type.String({ description: "Thread id from the inbound message you are replying to." }),
+			body: Type.String({ description: "Reply body, plain text. Supports full UTF-8." }),
+			account: Type.Optional(Type.String({ description: "Account id, when more than one is configured." })),
+		}),
+		outputSchema: Type.Object({ status: Type.String(), to: Type.Optional(Type.String()) }),
+		async execute(_id, params) {
+			const { thread_id, body, account } = params as { thread_id: string; body: string; account?: string };
+			const runtime = getRuntime(account);
+			if (!runtime) {
+				return {
+					content: [{ type: "text", text: "agentpost is not connected." }],
+					details: { status: "not-connected" },
+					isError: true,
+				};
+			}
+
+			const result = await runtime.reply({ threadId: thread_id, body });
+			if (!result.success) {
+				return {
+					content: [{ type: "text", text: `Reply failed: ${result.error}` }],
+					details: { status: "failed" },
+					isError: true,
+				};
+			}
+
+			const queued = result.status === "awaiting_approval";
+			return {
+				content: [
+					{
+						type: "text",
+						text: queued
+							? `Reply to ${result.to} is queued for the owner's approval. It has NOT been sent yet.`
+							: `Replied to ${result.to}.`,
+					},
+				],
+				details: { status: result.status ?? "sent", to: result.to },
+			};
+		},
+	});
+
+	api.registerTool({
 		name: "agentpost_check_inbox",
 		label: "Check inbox",
 		description:

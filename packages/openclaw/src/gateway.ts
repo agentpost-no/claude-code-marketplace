@@ -79,22 +79,19 @@ export async function startAccount(ctx: GatewayContext): Promise<void> {
 				// reply routes back into the same email thread.
 				messageId: item.replyThreadId,
 				timestamp: Date.parse(item.receivedAt) || undefined,
-				// Everything the agent says in this conversation is delivered as mail to
-				// whoever wrote in - including a clarifying question, a status remark, or
-				// a reply produced by instructions smuggled into the message it is
-				// answering. So it always goes to the owner for approval, whatever the
-				// contact's trust says. A deliberate send keeps the fast path; an
-				// utterance does not.
-				deliver: async (payload) => {
-					const text = payload.text?.trim();
-					if (!text) return;
-					const sent = await runtime.send({
-						to: item.from,
-						text,
-						threadId: item.replyThreadId,
-						requireApproval: true,
-					});
-					if (!sent.success) throw new Error(sent.error ?? "reply failed");
+				// Inbound mail informs the agent; it is not a thread anyone replies into.
+				//
+				// Nobody sits in an agentpost conversation - the owner talks to the agent
+				// wherever they already do, in Telegram or WhatsApp or the web chat, and
+				// this dispatch lands in that same session. Auto-delivering whatever the
+				// agent said there straight back to the sender meant a remark meant for
+				// the owner left as mail, and instructions smuggled into the email being
+				// answered had an unattended path out.
+				//
+				// Replying is therefore a deliberate act: agentpost_reply, in the thread
+				// the notification names.
+				deliver: async () => {
+					log.info("inbound mail is informational; replying is a deliberate agentpost_reply call");
 				},
 				onRecordError: (err) => log.error(`failed to record session: ${String(err)}`),
 				onDispatchError: (err, info) => log.error(`${info.kind} dispatch failed: ${String(err)}`),
