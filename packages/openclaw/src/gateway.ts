@@ -91,19 +91,49 @@ export async function startAccount(ctx: GatewayContext): Promise<void> {
 			status({ running: true, connected: runtime.connected(), lastMessageAt: Date.now() });
 		},
 
-		onNotice(text, meta) {
-			// Notices are informational and MUST NOT be able to send mail.
+		async onNotice(text, meta) {
+			// The agent should learn that its mail was delivered, bounced or approved -
+			// the Claude Code plugin surfaces exactly this, and dropping it here made the
+			// two hosts behave differently for no good reason.
 			//
-			// They used to be dispatched as an agent turn whose deliver callback emailed
-			// the owner. Every such email produced its own delivery report, which produced
-			// another notice, which produced another email: a self-feeding loop that sent
-			// 20 messages in seven minutes until the worker's rate limiter stopped it.
-			// Deduplicating notices could never fix it - each delivery report carries the
-			// message id of a *new* email, so every iteration looked like a fresh event.
+			// What must never happen is the notice sending mail. It used to be dispatched
+			// with a deliver callback that emailed the owner, so every notice produced an
+			// email, which produced its own delivery report, which produced another
+			// notice: twenty messages in seven minutes before the server's rate limiter
+			// stopped it. Deduplication could not fix that shape, because each report
+			// carries the id of a *new* email.
 			//
-			// The agent does not need a turn to learn that its mail arrived. The record
-			// lives in the local inbox and in the log; nothing here can reach the network.
-			log.info(`${meta.event ?? "status"}: ${text}`);
+			// So the notice is dispatched, and `deliver` is a dead end. The agent reads
+			// it; nothing it says in reply can reach the network. That is also how the
+			// Claude Code side behaves: a notification is one-way, and sending requires a
+			// deliberate tool call.
+			if (!account.ownerEmail || !pluginApi) {
+				log.info(`${meta.event ?? "status"}: ${text}`);
+				return;
+			}
+			await dispatchInboundDirectDmWithRuntime({
+				cfg,
+				runtime: pluginApi.runtime,
+				channel: CHANNEL_ID,
+				channelLabel: CHANNEL_LABEL,
+				accountId,
+				peer: { kind: "direct", id: account.ownerEmail },
+				senderId: account.ownerEmail,
+				senderAddress: account.ownerEmail,
+				recipientAddress: accountAddress(account) ?? runtime.address() ?? "",
+				conversationLabel: "Agentpost status",
+				rawBody: text,
+				// Derived from the event, so a re-sent notice is not a second turn.
+				messageId: meta.id ?? `notice:${meta.event ?? "status"}`,
+				// The worker authenticated this, not an arbitrary sender.
+				inboundAccessAuthorized: true,
+				// Deliberately inert. See above: this is the return path that looped.
+				deliver: async () => {
+					log.info("reply to a status notice is not sent; notices are one-way");
+				},
+				onRecordError: (err) => log.error(`failed to record session: ${String(err)}`),
+				onDispatchError: (err, info) => log.error(`${info.kind} dispatch failed: ${String(err)}`),
+			});
 		},
 	});
 

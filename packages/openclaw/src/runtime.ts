@@ -1,4 +1,5 @@
 import { initSodium, loadOrGenerateHmacKey, loadOrGenerateKeys, toBase64 } from "../../../plugins/agentpost/crypto.js";
+import { type InboxEntry, takeUnread } from "../../../plugins/agentpost/inbox.js";
 import { type IncomingMailItem, processIncomingEmail } from "../../../plugins/agentpost/mail.js";
 import { setStorageHome } from "../../../plugins/agentpost/paths.js";
 import type { DeliveryNotification, SendEmailResult } from "../../../plugins/agentpost/protocol.js";
@@ -39,6 +40,17 @@ export interface MailRuntime {
 	stop: () => void;
 	/** Reply in an existing thread when `threadId` is known, otherwise start a new one. */
 	send: (params: { to: string; text: string; threadId?: string | null }) => Promise<SendResult & { threadId?: string }>;
+	/** Compose a real email: subject line, optional HTML alternative, on-behalf-of. */
+	sendEmail: (params: {
+		to: string;
+		subject: string;
+		body: string;
+		html_body?: string;
+		on_behalf_of?: string;
+		footer_language?: "no" | "en";
+	}) => Promise<SendResult & { threadId?: string }>;
+	/** Unread inbound mail and notices, marked read as they are returned. */
+	readInbox: (limit: number) => { taken: InboxEntry[]; remaining: number };
 }
 
 /** Ids of notices already handed to the host, newest last. Bounded. */
@@ -80,6 +92,30 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 		void Promise.resolve(cb.onNotice(text, { ...meta, id })).catch((err) => {
 			cb.log.error(`notice delivery failed: ${String(err)}`);
 		});
+	}
+
+	/**
+	 * Refuse a send before it leaves. Covers both send paths, because a guard that only
+	 * one of them honours is not a guard.
+	 */
+	function guardSend(to: string): { success: false; error: string } | null {
+		// Mail addressed to the agent itself is the shape every loop takes: the reply
+		// arrives as new inbound, which produces another reply.
+		if (config && to.trim().toLowerCase() === config.email.toLowerCase()) {
+			const error = "refusing to send to the agent's own address";
+			cb.log.warn(error);
+			return { success: false, error };
+		}
+
+		const now = Date.now();
+		while (sendTimes.length > 0 && now - sendTimes[0] > SEND_WINDOW_MS) sendTimes.shift();
+		if (sendTimes.length >= MAX_SENDS_PER_WINDOW) {
+			const error = `local send limit reached (${MAX_SENDS_PER_WINDOW} per minute); refusing to send`;
+			cb.log.warn(error);
+			return { success: false, error };
+		}
+		sendTimes.push(now);
+		return null;
 	}
 
 	function sendContext(): SendContext {
@@ -231,22 +267,8 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 		async send({ to, text, threadId }) {
 			if (!config || !hmacKey) return { success: false, error: "agentpost is not registered yet" };
 
-			// Mail addressed to the agent itself is the shape every loop takes: the reply
-			// arrives as new inbound, which produces another reply.
-			if (to.trim().toLowerCase() === config.email.toLowerCase()) {
-				const error = "refusing to send to the agent's own address";
-				cb.log.warn(error);
-				return { success: false, error };
-			}
-
-			const now = Date.now();
-			while (sendTimes.length > 0 && now - sendTimes[0] > SEND_WINDOW_MS) sendTimes.shift();
-			if (sendTimes.length >= MAX_SENDS_PER_WINDOW) {
-				const error = `local send limit reached (${MAX_SENDS_PER_WINDOW} per minute); refusing to send`;
-				cb.log.warn(error);
-				return { success: false, error };
-			}
-			sendTimes.push(now);
+			const guard = guardSend(to);
+			if (guard) return guard;
 
 			// A known thread id means this is an answer to mail we hold, so keep the
 			// subject and In-Reply-To chain rather than starting a fresh conversation.
@@ -259,6 +281,17 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 				{ to, subject: deriveSubject(text), body: text },
 				{ ...sendContext(), fromAddress: config.email, hmacKey },
 			);
+		},
+
+		async sendEmail(params) {
+			if (!config || !hmacKey) return { success: false, error: "agentpost is not registered yet" };
+			const guard = guardSend(params.to);
+			if (guard) return guard;
+			return sendNewEmail(params, { ...sendContext(), fromAddress: config.email, hmacKey });
+		},
+
+		readInbox(limit) {
+			return takeUnread(limit);
 		},
 	};
 }

@@ -51,6 +51,21 @@ verification link; the channel connects by itself once that link is clicked.
 
 Each account gets its own storage root, because the keypair *is* the identity.
 
+## Two surfaces, on purpose
+
+The channel carries the conversation: inbound mail arrives as a DM and a reply in that
+thread goes back as a reply. That is what a channel is good at.
+
+But a channel message has no subject line, and email without one is a worse email. So the
+plugin also registers tools, the same shape the Claude Code plugin exposes:
+
+| Tool | For |
+| --- | --- |
+| `agentpost_send_email` | A real email: subject, plain text, optional HTML alternative, on-behalf-of, footer language |
+| `agentpost_check_inbox` | Unread mail and notices, for when the gateway was down |
+
+Replying stays conversational - answering in the thread is what the channel is for.
+
 ## How mail flows
 
 Inbound: worker pushes the sealed message over an authenticated WebSocket, the plugin
@@ -62,14 +77,15 @@ Outbound: the agent's reply goes back through the worker into the same thread
 (`In-Reply-To` preserved). A brand-new conversation takes its subject from the first line
 of the message.
 
-Delivery reports and approval results are logged, not dispatched as agent turns.
+Delivery reports and approval results arrive as a DM from `ownerEmail`, so the agent
+learns when its mail actually went out - the same information the Claude Code plugin
+surfaces as a notification.
 
-They used to arrive as a DM from `ownerEmail`, whose reply was emailed back to the owner.
-Every such email produced its own delivery report, which produced another notice, which
-produced another email - a self-feeding loop that sent twenty messages in seven minutes
-before the server's rate limiter stopped it. Deduplicating notices cannot fix that shape,
-because each delivery report carries the message id of a new email. A notice must not be
-able to reach the network at all.
+A reply to one of those notices is never sent. That return path is what looped: a notice
+whose reply was emailed to the owner produced its own delivery report, which produced
+another notice, twenty messages in seven minutes before the server's rate limiter stopped
+it. Deduplication cannot fix that shape, because each report carries the id of a new
+email. Notices are one-way, and sending requires a deliberate act.
 
 The client also refuses to send to the agent's own address, and caps itself at eight
 sends per minute; the server's limiter protects the server, not your mailbox.

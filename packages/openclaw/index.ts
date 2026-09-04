@@ -1,6 +1,7 @@
 import { defineChannelPluginEntry } from "openclaw/plugin-sdk/channel-core";
 import { agentpostChannelPlugin } from "./src/channel.js";
 import { setPluginApi } from "./src/gateway.js";
+import { registerTools } from "./src/tools.js";
 
 export default defineChannelPluginEntry({
 	id: "agentpost",
@@ -11,5 +12,8 @@ export default defineChannelPluginEntry({
 		// The connection itself is owned by the channel gateway adapter, which OpenClaw
 		// starts per account; this only hands it the runtime it dispatches through.
 		setPluginApi(api);
+		// Alongside the channel: a channel message cannot carry a subject line, and email
+		// without one is a worse email. See src/tools.ts.
+		registerTools(api);
 	},
 });

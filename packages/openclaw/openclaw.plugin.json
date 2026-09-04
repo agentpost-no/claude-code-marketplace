@@ -4,6 +4,9 @@
   "description": "Email channel for agents. Inbound mail is sealed to the agent's own key before it touches disk; outbound mail needs owner approval.",
   "version": "0.1.0",
   "channels": ["agentpost"],
+  "contracts": {
+    "tools": ["agentpost_send_email", "agentpost_check_inbox"]
+  },
   "activation": {
     "onStartup": true,
     "onChannels": ["agentpost"]
