@@ -6,6 +6,10 @@ import { setStorageHome, storageHome } from "./paths.js";
 import { attachmentsFromPaths } from "./send.js";
 
 /**
+ * The refusal message is deliberately identical for "inside the key directory" and
+ * "unreadable": distinguishing them is a filesystem oracle when the request to attach
+ * can be authored by an inbound email.
+ *
  * The private key is the one secret the product's central claim rests on: if it leaves
  * the machine, "the operator cannot read your inbound mail" stops being true.
  *
@@ -24,12 +28,12 @@ writeFileSync(join(outside, "report.pdf"), "a normal attachment");
 
 describe("attachmentsFromPaths", () => {
 	it("refuses the private key", async () => {
-		await expect(attachmentsFromPaths([join(home, "keys", "private.key")])).rejects.toThrow(/Refusing to attach/);
+		await expect(attachmentsFromPaths([join(home, "keys", "private.key")])).rejects.toThrow(/Cannot attach/);
 	});
 
 	it("refuses anything else inside the storage root", async () => {
-		await expect(attachmentsFromPaths([join(home, "config.json")])).rejects.toThrow(/Refusing to attach/);
-		await expect(attachmentsFromPaths([storageHome()])).rejects.toThrow(/Refusing to attach/);
+		await expect(attachmentsFromPaths([join(home, "config.json")])).rejects.toThrow(/Cannot attach/);
+		await expect(attachmentsFromPaths([storageHome()])).rejects.toThrow(/Cannot attach/);
 	});
 
 	it("refuses a symlink that points into the storage root", async () => {
@@ -40,7 +44,7 @@ describe("attachmentsFromPaths", () => {
 		} catch {
 			return; // No symlink permission on this platform; the direct cases still cover it.
 		}
-		await expect(attachmentsFromPaths([link])).rejects.toThrow(/Refusing to attach/);
+		await expect(attachmentsFromPaths([link])).rejects.toThrow(/Cannot attach/);
 	});
 
 	it("refuses a traversal path that lands in the storage root", async () => {

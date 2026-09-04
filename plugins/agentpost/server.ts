@@ -2,13 +2,13 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { initSodium, loadOrGenerateHmacKey, loadOrGenerateKeys, toBase64 } from "./crypto.js";
-import { appendInboxEntry, takeUnread, unreadCount } from "./inbox.js";
+import { appendInboxEntry, recentEntries, takeUnread, unreadCount } from "./inbox.js";
 import { type IncomingMailItem, processIncomingEmail } from "./mail.js";
-import { configPath } from "./paths.js";
+import { attachmentsDir, configPath } from "./paths.js";
 import type { DeliveryNotification, EncryptedEmail } from "./protocol.js";
-import { attachmentsFromPaths, replyToThread, type SendContext, sendNewEmail } from "./send.js";
+import { attachmentsFromPaths, guardSend, replyToThread, type SendContext, sendNewEmail } from "./send.js";
 import { getWorkerUrl, loadConfig, register, saveConfig } from "./store.js";
-import { getAllMessageIds } from "./thread.js";
+import { getAllMessageIds, lookupThread } from "./thread.js";
 import type { Config, KeyPair } from "./types.js";
 import { createWsClient } from "./ws-client.js";
 
@@ -133,6 +133,11 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
 						type: "number",
 						description: "Maximum number of items to return (default 10, oldest first).",
 					},
+					include_read: {
+						type: "boolean",
+						description:
+							"Also return items already marked read. Use this if a previous check_inbox result was lost, so nothing is stranded.",
+					},
 				},
 			},
 		},
@@ -177,7 +182,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 
 	switch (name) {
 		case "check_inbox": {
-			const { limit } = (args ?? {}) as { limit?: number };
+			const { limit, include_read } = (args ?? {}) as { limit?: number; include_read?: boolean };
 			const token = wsClient?.getAccessToken();
 			if (!token) return toolError("No access token. Wait for WebSocket authentication.");
 
@@ -215,16 +220,27 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				fetchError = err instanceof Error ? err.message : String(err);
 			}
 
-			const { taken, remaining } = takeUnread(limit ?? 10);
+			// Reading marks entries read, so a result lost in transit would otherwise strand
+			// that mail: the server was already acked and no other tool returns it.
+			// include_read reaches back over recent items regardless of the flag.
+			const { taken, remaining } = include_read
+				? { taken: recentEntries(limit ?? 10), remaining: 0 }
+				: takeUnread(limit ?? 10);
 
 			if (taken.length === 0) {
 				return toolOk(fetchError ? `No unread mail. (Server check failed: ${fetchError})` : "No unread mail.");
 			}
 
 			const blocks = taken.map((entry) => {
+				// Only values this side computed go in the header. Filenames are chosen by
+				// the sender, so listing them here would hand an attacker unbounded text
+				// outside the untrusted markers; the names are inside entry.content already.
+				const saved = entry.meta.attachments?.split(", ").filter(Boolean) ?? [];
+				const attachmentNote =
+					saved.length > 0 ? `\n${saved.length} attachment(s) saved under ${attachmentsDir()}` : "";
 				const header = `[${entry.kind}] ${entry.receivedAt}${
 					entry.meta.reply_thread_id ? ` (reply with thread_id: ${entry.meta.reply_thread_id})` : ""
-				}${entry.meta.attachments ? `\nAttachments saved to: ${entry.meta.attachments}` : ""}`;
+				}${attachmentNote}`;
 				return `${header}\n${entry.content}`;
 			});
 
@@ -259,6 +275,9 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				}
 			}
 
+			const blocked = guardSend(to, config.email, (m) => console.error(`[agentpost] ${m}`));
+			if (blocked) return toolError(blocked.error);
+
 			const result = await sendNewEmail(
 				{
 					to,
@@ -285,6 +304,10 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 
 		case "reply_to_email": {
 			const { thread_id, body } = args as { thread_id: string; body: string };
+			const thread = lookupThread(thread_id);
+			const blocked = thread ? guardSend(thread.to, config.email, (m) => console.error(`[agentpost] ${m}`)) : null;
+			if (blocked) return toolError(blocked.error);
+
 			const result = await replyToThread(thread_id, body, sendContext(config));
 
 			if (result.success) {

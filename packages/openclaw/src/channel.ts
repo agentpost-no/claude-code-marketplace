@@ -44,10 +44,13 @@ async function readMedia(ctx: {
 			const res = await fetch(url, { signal: AbortSignal.timeout(MEDIA_FETCH_TIMEOUT_MS), redirect: "error" });
 			if (!res.ok) return null;
 
-			const declared = Number(res.headers.get("content-length") ?? "0");
-			if (declared > MAX_MEDIA_BYTES) return null;
-			const buf = Buffer.from(await res.arrayBuffer());
-			if (buf.byteLength > MAX_MEDIA_BYTES) return null;
+			// content-length is the remote's claim, so it is only an early exit. The body
+			// is counted as it arrives and abandoned the moment it passes the cap: reading
+			// it whole first would let a lying server buffer for the full timeout.
+			if (Number(res.headers.get("content-length") ?? "0") > MAX_MEDIA_BYTES) return null;
+
+			const buf = await readCapped(res, MAX_MEDIA_BYTES);
+			if (!buf) return null;
 
 			const name = basename(url.pathname) || "attachment";
 			// The remote's own content-type is its claim, not a fact. The extension is
@@ -82,6 +85,30 @@ function mimeFor(path: string): string {
 		zip: "application/zip",
 	};
 	return byExtension[path.split(".").pop()?.toLowerCase() ?? ""] ?? "application/octet-stream";
+}
+
+/** Read a response body, giving up as soon as it exceeds the cap. */
+async function readCapped(res: Response, cap: number): Promise<Buffer | null> {
+	const reader = res.body?.getReader();
+	if (!reader) return null;
+
+	const chunks: Uint8Array[] = [];
+	let total = 0;
+	try {
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			total += value.byteLength;
+			if (total > cap) {
+				await reader.cancel();
+				return null;
+			}
+			chunks.push(value);
+		}
+	} catch {
+		return null;
+	}
+	return Buffer.concat(chunks);
 }
 
 /** Attachments are capped well under the worker's own 8 MB ceiling. */

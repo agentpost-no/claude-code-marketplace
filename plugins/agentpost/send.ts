@@ -88,14 +88,19 @@ export async function attachmentsFromPaths(paths: readonly string[]): Promise<Se
 			// Missing file: fall through to readFile, which reports it properly.
 		}
 		if (resolved === protectedRoot || resolved.startsWith(protectedRoot + sep)) {
-			throw new Error(`Refusing to attach ${filePath}: it is inside the agentpost key and state directory`);
+			// No path in the message: the refusal itself is the answer, and the reason is
+			// for the log. Distinguishing "inside the key directory" from "missing" tells
+			// a prober where things are, and the prober can be an email.
+			throw new Error(`Cannot attach ${basename(filePath)}`);
 		}
 
 		let buf: Buffer;
 		try {
 			buf = await readFile(resolved);
-		} catch (err) {
-			throw new Error(`Failed to read file ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
+		} catch {
+			// Deliberately no errno and no path: ENOENT versus EACCES versus EISDIR is a
+			// filesystem oracle when the request can be authored by an inbound email.
+			throw new Error(`Cannot attach ${basename(filePath)}`);
 		}
 		const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
 		out.push({
@@ -105,6 +110,42 @@ export async function attachmentsFromPaths(paths: readonly string[]): Promise<Se
 		});
 	}
 	return out;
+}
+
+/**
+ * Local ceiling on outbound sends, and a refusal to mail the agent itself.
+ *
+ * The server rate-limits too, but that protects the server: by the time it refuses, the
+ * mail has already been sent. A notice loop reached twenty messages in seven minutes
+ * before the server stopped it, and mail addressed to the agent's own address is the
+ * shape every such loop takes - the reply arrives as new inbound and produces another.
+ *
+ * State is per-process, which is the right scope: each host runs one agent identity.
+ */
+const SEND_WINDOW_MS = 60_000;
+const MAX_SENDS_PER_WINDOW = 8;
+const sendTimes: number[] = [];
+
+export function guardSend(
+	to: string,
+	ownAddress: string | undefined,
+	log?: (m: string) => void,
+): { success: false; error: string } | null {
+	if (ownAddress && to.trim().toLowerCase() === ownAddress.toLowerCase()) {
+		const error = "refusing to send to the agent's own address";
+		log?.(error);
+		return { success: false, error };
+	}
+
+	const now = Date.now();
+	while (sendTimes.length > 0 && now - sendTimes[0] > SEND_WINDOW_MS) sendTimes.shift();
+	if (sendTimes.length >= MAX_SENDS_PER_WINDOW) {
+		const error = `local send limit reached (${MAX_SENDS_PER_WINDOW} per minute); refusing to send`;
+		log?.(error);
+		return { success: false, error };
+	}
+	sendTimes.push(now);
+	return null;
 }
 
 export interface SendContext {

@@ -30335,6 +30335,10 @@ function takeUnread(limit) {
     persist();
   return { taken, remaining: unread.length - taken.length };
 }
+function recentEntries(limit) {
+  const entries = getStore().entries;
+  return entries.slice(Math.max(0, entries.length - Math.max(1, limit)));
+}
 
 // email-parser.ts
 import { existsSync as existsSync3, mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "node:fs";
@@ -34456,13 +34460,13 @@ async function attachmentsFromPaths(paths) {
       resolved = await realpath(resolved);
     } catch {}
     if (resolved === protectedRoot || resolved.startsWith(protectedRoot + sep)) {
-      throw new Error(`Refusing to attach ${filePath}: it is inside the agentpost key and state directory`);
+      throw new Error(`Cannot attach ${basename(filePath)}`);
     }
     let buf;
     try {
       buf = await readFile(resolved);
-    } catch (err) {
-      throw new Error(`Failed to read file ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
+    } catch {
+      throw new Error(`Cannot attach ${basename(filePath)}`);
     }
     const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
     out.push({
@@ -34472,6 +34476,26 @@ async function attachmentsFromPaths(paths) {
     });
   }
   return out;
+}
+var SEND_WINDOW_MS = 60000;
+var MAX_SENDS_PER_WINDOW = 8;
+var sendTimes = [];
+function guardSend(to, ownAddress, log) {
+  if (ownAddress && to.trim().toLowerCase() === ownAddress.toLowerCase()) {
+    const error2 = "refusing to send to the agent's own address";
+    log?.(error2);
+    return { success: false, error: error2 };
+  }
+  const now = Date.now();
+  while (sendTimes.length > 0 && now - sendTimes[0] > SEND_WINDOW_MS)
+    sendTimes.shift();
+  if (sendTimes.length >= MAX_SENDS_PER_WINDOW) {
+    const error2 = `local send limit reached (${MAX_SENDS_PER_WINDOW} per minute); refusing to send`;
+    log?.(error2);
+    return { success: false, error: error2 };
+  }
+  sendTimes.push(now);
+  return null;
 }
 async function sendViaRest(params, ctx) {
   if (!ctx.accessToken) {
@@ -34919,6 +34943,10 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
           limit: {
             type: "number",
             description: "Maximum number of items to return (default 10, oldest first)."
+          },
+          include_read: {
+            type: "boolean",
+            description: "Also return items already marked read. Use this if a previous check_inbox result was lost, so nothing is stranded."
           }
         }
       }
@@ -34956,7 +34984,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
   }
   switch (name) {
     case "check_inbox": {
-      const { limit } = args ?? {};
+      const { limit, include_read } = args ?? {};
       const token = wsClient?.getAccessToken();
       if (!token)
         return toolError("No access token. Wait for WebSocket authentication.");
@@ -34976,13 +35004,15 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
       } catch (err) {
         fetchError = err instanceof Error ? err.message : String(err);
       }
-      const { taken, remaining } = takeUnread(limit ?? 10);
+      const { taken, remaining } = include_read ? { taken: recentEntries(limit ?? 10), remaining: 0 } : takeUnread(limit ?? 10);
       if (taken.length === 0) {
         return toolOk(fetchError ? `No unread mail. (Server check failed: ${fetchError})` : "No unread mail.");
       }
       const blocks = taken.map((entry) => {
-        const header = `[${entry.kind}] ${entry.receivedAt}${entry.meta.reply_thread_id ? ` (reply with thread_id: ${entry.meta.reply_thread_id})` : ""}${entry.meta.attachments ? `
-Attachments saved to: ${entry.meta.attachments}` : ""}`;
+        const saved = entry.meta.attachments?.split(", ").filter(Boolean) ?? [];
+        const attachmentNote = saved.length > 0 ? `
+${saved.length} attachment(s) saved under ${attachmentsDir()}` : "";
+        const header = `[${entry.kind}] ${entry.receivedAt}${entry.meta.reply_thread_id ? ` (reply with thread_id: ${entry.meta.reply_thread_id})` : ""}${attachmentNote}`;
         return `${header}
 ${entry.content}`;
       });
@@ -35006,6 +35036,9 @@ ${entry.content}`;
           return toolError(err instanceof Error ? err.message : String(err));
         }
       }
+      const blocked = guardSend(to, config2.email, (m) => console.error(`[agentpost] ${m}`));
+      if (blocked)
+        return toolError(blocked.error);
       const result = await sendNewEmail({
         to,
         subject,
@@ -35025,6 +35058,10 @@ ${entry.content}`;
     }
     case "reply_to_email": {
       const { thread_id, body } = args;
+      const thread = lookupThread(thread_id);
+      const blocked = thread ? guardSend(thread.to, config2.email, (m) => console.error(`[agentpost] ${m}`)) : null;
+      if (blocked)
+        return toolError(blocked.error);
       const result = await replyToThread(thread_id, body, sendContext(config2));
       if (result.success) {
         if (result.status === "awaiting_approval") {

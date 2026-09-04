@@ -5,6 +5,7 @@ import { setStorageHome } from "../../../plugins/agentpost/paths.js";
 import type { DeliveryNotification, SendEmailResult } from "../../../plugins/agentpost/protocol.js";
 import {
 	attachmentsFromPaths,
+	guardSend,
 	replyToThread,
 	type SendAttachment,
 	type SendContext,
@@ -74,21 +75,9 @@ export interface MailRuntime {
 /** Ids of notices already handed to the host, newest last. Bounded. */
 const NOTICE_MEMORY = 200;
 
-/**
- * Local ceiling on outbound sends.
- *
- * The worker rate-limits too, but that protects the server; by the time it refuses, the
- * mail has already been sent. A loop here reached twenty messages in seven minutes
- * before the server stopped it, so the client refuses first and says why.
- */
-const SEND_WINDOW_MS = 60_000;
-const MAX_SENDS_PER_WINDOW = 8;
-
 export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCallbacks): MailRuntime {
 	let ws: WsClient | null = null;
 	const seenNotices: string[] = [];
-	/** Timestamps of recent sends, for the local ceiling below. */
-	const sendTimes: number[] = [];
 	let config: Config | null = null;
 	let keys: KeyPair | null = null;
 	let hmacKey: Uint8Array | null = null;
@@ -110,30 +99,6 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 		void Promise.resolve(cb.onNotice(text, { ...meta, id })).catch((err) => {
 			cb.log.error(`notice delivery failed: ${String(err)}`);
 		});
-	}
-
-	/**
-	 * Refuse a send before it leaves. Covers both send paths, because a guard that only
-	 * one of them honours is not a guard.
-	 */
-	function guardSend(to: string): { success: false; error: string } | null {
-		// Mail addressed to the agent itself is the shape every loop takes: the reply
-		// arrives as new inbound, which produces another reply.
-		if (config && to.trim().toLowerCase() === config.email.toLowerCase()) {
-			const error = "refusing to send to the agent's own address";
-			cb.log.warn(error);
-			return { success: false, error };
-		}
-
-		const now = Date.now();
-		while (sendTimes.length > 0 && now - sendTimes[0] > SEND_WINDOW_MS) sendTimes.shift();
-		if (sendTimes.length >= MAX_SENDS_PER_WINDOW) {
-			const error = `local send limit reached (${MAX_SENDS_PER_WINDOW} per minute); refusing to send`;
-			cb.log.warn(error);
-			return { success: false, error };
-		}
-		sendTimes.push(now);
-		return null;
 	}
 
 	function sendContext(): SendContext {
@@ -285,7 +250,7 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 		async send({ to, text, threadId, attachments }) {
 			if (!config || !hmacKey) return { success: false, error: "agentpost is not registered yet" };
 
-			const guard = guardSend(to);
+			const guard = guardSend(to, config.email, cb.log.warn);
 			if (guard) return guard;
 
 			// A known thread id means this is an answer to mail we hold, so keep the
@@ -303,7 +268,7 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 
 		async sendEmail({ file_paths, attachments, ...params }) {
 			if (!config || !hmacKey) return { success: false, error: "agentpost is not registered yet" };
-			const guard = guardSend(params.to);
+			const guard = guardSend(params.to, config.email, cb.log.warn);
 			if (guard) return guard;
 
 			let all = [...(attachments ?? [])];
@@ -325,7 +290,7 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 			if (!config) return { success: false, error: "agentpost is not registered yet" };
 			const thread = lookupThread(threadId);
 			if (!thread) return { success: false, error: `Thread not found: ${threadId}` };
-			const guard = guardSend(thread.to);
+			const guard = guardSend(thread.to, config.email, cb.log.warn);
 			if (guard) return guard;
 			return replyToThread(threadId, body, sendContext());
 		},
