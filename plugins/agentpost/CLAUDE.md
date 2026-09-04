@@ -10,6 +10,13 @@ Bun (build) / Node 22+ (runtime), @modelcontextprotocol/sdk, libsodium-wrappers-
 Two bundles: `dist/server.js` (bun target, used by the Claude Code plugin) and
 `dist/server.node.mjs` (node target, used by any other MCP host and by `bin`).
 
+**Both are committed and are what `.mcp.json` executes.** CI rebuilds and byte-compares
+them against the tracked files, so a commit that edits only `dist/` - unreviewable in a
+diff - fails. That comparison needs a pinned bun (`bun-version` in the CI workflow, not
+`latest`): the bundler names variables differently between versions and would otherwise
+fail on identical source. Build with that exact bun, and when bumping it, rebuild and
+commit `dist/` in the same commit.
+
 ## Files
 
 - `server.ts` - MCP server. Tools: register_email, send_email (with file_paths), reply_to_email, check_inbox.
