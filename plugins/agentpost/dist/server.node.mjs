@@ -30315,10 +30315,11 @@ function evict(entries) {
 function appendInboxEntry(entry) {
   const store = getStore();
   if (store.entries.some((e) => e.id === entry.id))
-    return;
+    return false;
   store.entries.push({ ...entry, read: false });
   store.entries = evict(store.entries);
   persist();
+  return true;
 }
 function unreadCount() {
   return getStore().entries.filter((e) => !e.read).length;
@@ -34376,7 +34377,18 @@ async function processIncomingEmail(encrypted, deps) {
       meta2.thread_id = threadContext.threadId;
     if (attachments.length > 0)
       meta2.attachments = attachments.map((a) => a.savedPath).join(", ");
-    appendInboxEntry({ id: encrypted.id, kind: "email", receivedAt: encrypted.receivedAt, meta: meta2, content });
+    const isNew = appendInboxEntry({
+      id: encrypted.id,
+      kind: "email",
+      receivedAt: encrypted.receivedAt,
+      meta: meta2,
+      content
+    });
+    if (!isNew) {
+      log(`Email ${encrypted.id} was already handled; re-acking without delivering again.`);
+      deps.ack(encrypted.id);
+      return;
+    }
     try {
       await deps.deliver({
         id: encrypted.id,

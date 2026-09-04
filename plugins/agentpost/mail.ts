@@ -95,7 +95,23 @@ export async function processIncomingEmail(encrypted: EncryptedEmail, deps: Inco
 
 		// Durable first, deliver second: the ack below tells the server it may forget
 		// this message, so the content has to survive locally whatever the host does.
-		appendInboxEntry({ id: encrypted.id, kind: "email", receivedAt: encrypted.receivedAt, meta, content });
+		//
+		// A false here means the server is redelivering something already handled - the
+		// ack is silently dropped when the socket is not open, which is exactly the state
+		// during a reconnect mid-drain. Delivering again would give the agent a second
+		// turn for one email, so only the ack is repeated.
+		const isNew = appendInboxEntry({
+			id: encrypted.id,
+			kind: "email",
+			receivedAt: encrypted.receivedAt,
+			meta,
+			content,
+		});
+		if (!isNew) {
+			log(`Email ${encrypted.id} was already handled; re-acking without delivering again.`);
+			deps.ack(encrypted.id);
+			return;
+		}
 
 		try {
 			await deps.deliver({

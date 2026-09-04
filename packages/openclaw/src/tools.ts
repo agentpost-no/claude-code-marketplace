@@ -16,9 +16,9 @@ import { getRuntime } from "./registry.js";
  * reads before anything else. The Claude Code plugin exposes those as tool parameters,
  * and an agent in OpenClaw should be able to write the same email.
  *
- * So both surfaces exist and each does what it is good at: the channel carries the
- * conversation, and these tools compose real mail. Replying stays conversational -
- * answering in the thread is what the channel is for.
+ * Inbound mail surfaces wherever the owner already talks to the agent. Replying is
+ * agentpost_reply, not a message in that session: what the agent says there is meant
+ * for the owner, not for whoever sent the email.
  */
 export function registerTools(api: OpenClawPluginApi): void {
 	api.registerTool({

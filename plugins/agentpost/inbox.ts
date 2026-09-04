@@ -63,13 +63,17 @@ function evict(entries: InboxEntry[]): InboxEntry[] {
 	return entries.filter((e) => !dropped.has(e));
 }
 
-/** Append an item, ignoring a repeat of an id already stored (server redelivery). */
-export function appendInboxEntry(entry: Omit<InboxEntry, "read">): void {
+/**
+ * Append an item. Returns false when this id is already stored, which is how the
+ * caller knows the server is redelivering something already handled.
+ */
+export function appendInboxEntry(entry: Omit<InboxEntry, "read">): boolean {
 	const store = getStore();
-	if (store.entries.some((e) => e.id === entry.id)) return;
+	if (store.entries.some((e) => e.id === entry.id)) return false;
 	store.entries.push({ ...entry, read: false });
 	store.entries = evict(store.entries);
 	persist();
+	return true;
 }
 
 export function unreadCount(): number {

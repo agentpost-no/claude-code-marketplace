@@ -4,7 +4,7 @@ import { dispatchInboundDirectDmWithRuntime } from "openclaw/plugin-sdk/channel-
 import { waitUntilAbort } from "openclaw/plugin-sdk/channel-lifecycle";
 import { resolveStateDir } from "openclaw/plugin-sdk/state-paths";
 import { type AgentpostAccount, accountAddress, CHANNEL_ID } from "./account.js";
-import { deleteRuntime, setRuntime } from "./registry.js";
+import { deleteRuntime, listRuntimes, setRuntime } from "./registry.js";
 import { createMailRuntime } from "./runtime.js";
 
 const CHANNEL_LABEL = "Agentpost";
@@ -30,6 +30,27 @@ type GatewayContext = Parameters<
 
 export async function startAccount(ctx: GatewayContext): Promise<void> {
 	const { accountId, cfg } = ctx;
+
+	// One account per process, for now.
+	//
+	// The storage root and the inbox and thread caches in the shared core are module
+	// globals, so a second account would write its mail into the first one's inbox and
+	// read keys from whichever home was set last. The keypair is the identity, so that
+	// is two people's mail in one mailbox - worse than not supporting it. Isolating the
+	// stores per instance is the fix; until then this refuses rather than corrupts.
+	const running = listRuntimes();
+	if (running.length > 0 && !running.some(([id]) => id === accountId)) {
+		ctx.log?.error?.(
+			`[agentpost] refusing to start account "${accountId}": ${running[0][0]} is already running, and storage is not yet isolated per account`,
+		);
+		ctx.setStatus({
+			...ctx.getStatus(),
+			accountId,
+			running: false,
+			connected: false,
+		});
+		return;
+	}
 	const prefix = `[agentpost:${accountId}]`;
 	const log = {
 		info: (m: string) => ctx.log?.info?.(`${prefix} ${m}`),
@@ -37,8 +58,9 @@ export async function startAccount(ctx: GatewayContext): Promise<void> {
 		error: (m: string) => ctx.log?.error?.(`${prefix} ${m}`),
 	};
 
-	// Each account keeps its own storage root: the keypair is the identity, so two
-	// accounts sharing a directory would share an inbox.
+	// Each account gets its own storage root - the keypair is the identity - but see the
+	// single-account guard above: the core's stores are still process-global, so only
+	// one of these is ever live at a time.
 	const account: AgentpostAccount = {
 		...ctx.account,
 		accountId,
