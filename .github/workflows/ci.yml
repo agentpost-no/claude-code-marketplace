@@ -18,6 +18,8 @@ jobs:
         working-directory: plugins/agentpost
       - run: bunx typescript@5.9.3 --noEmit -p tsconfig.json
         working-directory: plugins/agentpost
+      - run: bun test
+        working-directory: plugins/agentpost
       - run: bun run build
         working-directory: plugins/agentpost
 

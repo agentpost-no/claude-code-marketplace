@@ -34445,7 +34445,10 @@ async function attachmentsFromPaths(paths) {
   if (paths.length > MAX_ATTACHED_FILES) {
     throw new Error(`Too many attachments: ${paths.length}, limit is ${MAX_ATTACHED_FILES}`);
   }
-  const protectedRoot = resolve(storageHome());
+  let protectedRoot = resolve(storageHome());
+  try {
+    protectedRoot = await realpath(protectedRoot);
+  } catch {}
   const out = [];
   for (const filePath of paths) {
     let resolved = resolve(filePath);

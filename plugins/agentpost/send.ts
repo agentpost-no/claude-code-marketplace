@@ -67,7 +67,18 @@ export async function attachmentsFromPaths(paths: readonly string[]): Promise<Se
 		throw new Error(`Too many attachments: ${paths.length}, limit is ${MAX_ATTACHED_FILES}`);
 	}
 
-	const protectedRoot = resolve(storageHome());
+	// Both sides must be resolved, not just the candidate. On macOS the storage root
+	// often sits under /var, which is a symlink to /private/var: comparing a realpath'd
+	// candidate against an unresolved root never matches, and the guard silently passes
+	// everything. A test caught this; the guard had shipped broken.
+	let protectedRoot = resolve(storageHome());
+	try {
+		protectedRoot = await realpath(protectedRoot);
+	} catch {
+		// The directory may not exist yet on a first run; the unresolved form still
+		// blocks the common case.
+	}
+
 	const out: SendAttachment[] = [];
 	for (const filePath of paths) {
 		let resolved = resolve(filePath);
