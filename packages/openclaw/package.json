@@ -1,5 +1,5 @@
 {
-  "name": "@agentpost/openclaw",
+  "name": "@agentpost-no/openclaw",
   "version": "0.1.0",
   "description": "Agentpost email channel for OpenClaw. Inbound mail is sealed to the agent's own key; outbound needs owner approval.",
   "license": "Apache-2.0",
