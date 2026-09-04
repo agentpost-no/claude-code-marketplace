@@ -70,9 +70,12 @@ export async function processIncomingEmail(encrypted: EncryptedEmail, deps: Inco
 		const attachments = saveAttachments(email.attachments, encrypted.receivedAt);
 		const threadContext = email.inReplyTo ? lookupThread(email.inReplyTo) : null;
 
-		// Store this inbound email as a thread entry so we can reply to it.
-		// Use the sender's Message-ID as the key for In-Reply-To when replying.
-		const replyThreadId = encrypted.emailMessageId ?? encrypted.id;
+		// Key inbound threads on the server-assigned id, never on the sender's own
+		// Message-ID. That header is attacker-controlled, and the agent's outbound thread
+		// ids travel in a header the recipient can read - so keying on it let a reply
+		// name an existing thread and take it over. The Message-ID is still recorded
+		// below as the In-Reply-To value, which is what it is actually for.
+		const replyThreadId = `in:${encrypted.id}`;
 		storeThreadContext(replyThreadId, {
 			to: email.from, // reply goes back to sender
 			subject: email.subject,

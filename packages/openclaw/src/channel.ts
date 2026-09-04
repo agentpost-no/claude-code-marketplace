@@ -5,6 +5,7 @@ import { createChannelMessageAdapterFromOutbound } from "openclaw/plugin-sdk/cha
 import type { SendAttachment } from "../../../plugins/agentpost/send.js";
 import { type AgentpostAccount, CHANNEL_ID, inspectAccount, listAccountIds, resolveAccount } from "./account.js";
 import { startAccount, stopAccount } from "./gateway.js";
+import { resolvePublicAddress } from "./net-guard.js";
 import { getRuntime } from "./registry.js";
 
 /**
@@ -38,7 +39,7 @@ async function readMedia(ctx: {
 			// fetch the agent can be talked into is an exfiltration primitive - and the
 			// text that talks it into one arrives as inbound mail.
 			if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-			if (isPrivateHost(url.hostname)) return null;
+			if ((await resolvePublicAddress(url.hostname)) === null) return null;
 
 			const res = await fetch(url, { signal: AbortSignal.timeout(MEDIA_FETCH_TIMEOUT_MS), redirect: "error" });
 			if (!res.ok) return null;
@@ -64,30 +65,6 @@ async function readMedia(ctx: {
 	} catch {
 		return null;
 	}
-}
-
-/** Hosts that must never be fetched: loopback, link-local, and the private ranges. */
-function isPrivateHost(hostname: string): boolean {
-	const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
-	if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".internal")) return true;
-	// IPv6 loopback, unique-local (fc00::/7) and link-local (fe80::/10).
-	if (host === "::1" || /^f[cd][0-9a-f]{2}:/.test(host) || /^fe[89ab][0-9a-f]:/.test(host)) return true;
-	// IPv4-mapped IPv6 falls back to the v4 rules below.
-	const v4 = host.startsWith("::ffff:") ? host.slice(7) : host;
-	const parts = v4.split(".");
-	if (parts.length !== 4 || parts.some((p) => !/^\d{1,3}$/.test(p))) return false;
-	const [a, b] = parts.map(Number);
-	if (parts.some((p) => Number(p) > 255)) return true;
-	return (
-		a === 0 || // this network
-		a === 10 || // private
-		a === 127 || // loopback
-		(a === 100 && b >= 64 && b <= 127) || // carrier-grade NAT
-		(a === 169 && b === 254) || // link-local, incl. cloud metadata
-		(a === 172 && b >= 16 && b <= 31) || // private
-		(a === 192 && b === 168) || // private
-		a >= 224 // multicast and reserved
-	);
 }
 
 /** Same short table the core uses; duplicated here only for the URL-less local path. */

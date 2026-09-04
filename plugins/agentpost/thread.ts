@@ -37,9 +37,26 @@ export function signThread(hmacKey: Uint8Array, input: ThreadSignInput): string 
 
 export function storeThreadContext(threadId: string, context: Omit<ThreadContext, "threadId">): void {
 	const store = getStore();
+
+	// An outbound record is the only trusted memory of what this agent actually sent, and
+	// it decides where a reply is addressed. Inbound mail must never replace one: the
+	// outbound thread id travels in a header, so a recipient can learn it and send a
+	// reply that claims to be that thread. Overwriting would repoint the agent's replies
+	// at whoever wrote in, and destroy the record that formatEmailContent trusts.
+	const existing = store.threads[threadId];
+	if (existing?.outbound === true && context.outbound !== true) {
+		return;
+	}
+
 	store.threads[threadId] = { threadId, ...context };
 	if (context.messageId) {
-		store.messageIndex[context.messageId] = threadId;
+		// Likewise for the index: an inbound Message-ID must not remap an id that already
+		// points at an outbound thread.
+		const mapped = store.messageIndex[context.messageId];
+		const mappedThread = mapped ? store.threads[mapped] : undefined;
+		if (!(mappedThread?.outbound === true && context.outbound !== true)) {
+			store.messageIndex[context.messageId] = threadId;
+		}
 	}
 	persist();
 }

@@ -42,6 +42,8 @@ jobs:
         working-directory: packages/openclaw
       - run: bunx typescript@5.9.3 --noEmit -p tsconfig.json
         working-directory: packages/openclaw
+      - run: bun test
+        working-directory: packages/openclaw
       - run: bun run build
         working-directory: packages/openclaw
       - name: Load the built plugin

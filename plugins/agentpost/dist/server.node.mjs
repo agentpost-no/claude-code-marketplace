@@ -34312,9 +34312,17 @@ function signThread(hmacKey, input) {
 }
 function storeThreadContext(threadId, context) {
   const store = getStore2();
+  const existing = store.threads[threadId];
+  if (existing?.outbound === true && context.outbound !== true) {
+    return;
+  }
   store.threads[threadId] = { threadId, ...context };
   if (context.messageId) {
-    store.messageIndex[context.messageId] = threadId;
+    const mapped = store.messageIndex[context.messageId];
+    const mappedThread = mapped ? store.threads[mapped] : undefined;
+    if (!(mappedThread?.outbound === true && context.outbound !== true)) {
+      store.messageIndex[context.messageId] = threadId;
+    }
   }
   persist2();
 }
@@ -34357,7 +34365,7 @@ async function processIncomingEmail(encrypted, deps) {
   try {
     const attachments = saveAttachments(email2.attachments, encrypted.receivedAt);
     const threadContext = email2.inReplyTo ? lookupThread(email2.inReplyTo) : null;
-    const replyThreadId = encrypted.emailMessageId ?? encrypted.id;
+    const replyThreadId = `in:${encrypted.id}`;
     storeThreadContext(replyThreadId, {
       to: email2.from,
       subject: email2.subject,
@@ -34410,8 +34418,8 @@ async function processIncomingEmail(encrypted, deps) {
 }
 
 // send.ts
-import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
+import { readFile, realpath } from "node:fs/promises";
+import { basename, resolve, sep } from "node:path";
 var MIME_BY_EXTENSION = {
   pdf: "application/pdf",
   png: "image/png",
@@ -34432,18 +34440,30 @@ var MIME_BY_EXTENSION = {
   xls: "application/vnd.ms-excel",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 };
+var MAX_ATTACHED_FILES = 10;
 async function attachmentsFromPaths(paths) {
+  if (paths.length > MAX_ATTACHED_FILES) {
+    throw new Error(`Too many attachments: ${paths.length}, limit is ${MAX_ATTACHED_FILES}`);
+  }
+  const protectedRoot = resolve(storageHome());
   const out = [];
   for (const filePath of paths) {
+    let resolved = resolve(filePath);
+    try {
+      resolved = await realpath(resolved);
+    } catch {}
+    if (resolved === protectedRoot || resolved.startsWith(protectedRoot + sep)) {
+      throw new Error(`Refusing to attach ${filePath}: it is inside the agentpost key and state directory`);
+    }
     let buf;
     try {
-      buf = await readFile(filePath);
+      buf = await readFile(resolved);
     } catch (err) {
       throw new Error(`Failed to read file ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
     }
     const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
     out.push({
-      name: basename(filePath),
+      name: basename(resolved),
       content: buf.toString("base64"),
       contentType: MIME_BY_EXTENSION[ext] ?? "application/octet-stream"
     });

@@ -30,7 +30,8 @@
   "scripts": {
     "build": "bun build index.ts --target=node --outfile=dist/index.mjs --external openclaw --external libsodium-wrappers-sumo",
     "typecheck": "tsc --noEmit",
-    "prepare": "bun run build"
+    "prepare": "bun run build",
+    "test": "bun test"
   },
   "dependencies": {
     "libsodium-wrappers-sumo": "^0.7.15",
