@@ -70,3 +70,7 @@ export function loadOrGenerateHmacKey(dir: string = keysDir()): Uint8Array {
 export function hmac(key: Uint8Array, message: Uint8Array): Uint8Array {
 	return sodium.crypto_auth(message, key);
 }
+
+export function sha256(data: Uint8Array): Uint8Array {
+	return sodium.crypto_hash_sha256(data);
+}

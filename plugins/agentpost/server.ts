@@ -4,6 +4,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import { initSodium, loadOrGenerateHmacKey, loadOrGenerateKeys, toBase64 } from "./crypto.js";
 import { appendInboxEntry, recentEntries, takeUnread, unreadCount } from "./inbox.js";
 import { type IncomingMailItem, processIncomingEmail } from "./mail.js";
+import { formatDeliveryNotification } from "./notice.js";
 import { attachmentsDir, configPath } from "./paths.js";
 import type { DeliveryNotification, EncryptedEmail } from "./protocol.js";
 import { attachmentsFromPaths, guardSend, replyToThread, type SendContext, sendNewEmail } from "./send.js";
@@ -431,19 +432,9 @@ async function handleIncomingEmail(encrypted: EncryptedEmail) {
 
 // --- Delivery notification handling ---
 async function handleDeliveryNotification(notification: DeliveryNotification) {
-	const labels: Record<string, string> = {
-		delivered: "Delivered",
-		bounced: "Bounced",
-		spam_complaint: "Spam Complaint",
-		opened: "Opened",
-	};
-	const label = labels[notification.event] ?? notification.event;
-	const content = [
-		`[${label}] ${notification.description}`,
-		`Recipient: ${notification.recipient}`,
-		`Message-ID: ${notification.messageId}`,
-		`Time: ${notification.timestamp}`,
-	].join("\n");
+	// Formatting (and fencing - a bounce reason is written by the receiving mail server)
+	// lives in notice.ts so both hosts share one boundary.
+	const content = formatDeliveryNotification(notification);
 
 	const meta = {
 		source: "email",

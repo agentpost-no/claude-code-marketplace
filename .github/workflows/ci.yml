@@ -5,13 +5,17 @@ on:
   push:
     branches: [main]
 
+# Least privilege by default.
+permissions:
+  contents: read
+
 jobs:
   plugin:
     name: Claude Code plugin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
@@ -22,16 +26,25 @@ jobs:
         working-directory: plugins/agentpost
       - run: bun run build
         working-directory: plugins/agentpost
+      # dist/ is committed and is what .mcp.json actually executes, so a commit touching
+      # only the bundle would ship to every plugin user without being reviewable in a diff.
+      # Rebuilding and comparing makes the tracked bundle provably the tracked source.
+      - name: Verify committed dist matches source
+        run: |
+          if ! git diff --exit-code -- plugins/agentpost/dist; then
+            echo "::error::plugins/agentpost/dist does not match a build of the current source. Run 'bun run build' in plugins/agentpost and commit the result."
+            exit 1
+          fi
 
   openclaw:
     name: OpenClaw plugin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: latest
       # The bundle inlines the shared core from plugins/agentpost, and module resolution

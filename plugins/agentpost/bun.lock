@@ -5,7 +5,7 @@
     "": {
       "name": "claude-channel-agentpost",
       "dependencies": {
-        "@modelcontextprotocol/sdk": "^1.0.0",
+        "@modelcontextprotocol/sdk": "^1.29.0",
         "libsodium-wrappers-sumo": "^0.7.15",
         "postal-mime": "^2.4.1",
         "turndown": "^7.2.4",

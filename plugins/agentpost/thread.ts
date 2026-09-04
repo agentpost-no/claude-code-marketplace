@@ -15,6 +15,48 @@ interface ThreadStore {
 
 const EMPTY_STORE: ThreadStore = { threads: {}, messageIndex: {} };
 
+/**
+ * Caps on what threads.json retains.
+ *
+ * The whole file is parsed on first use and fully re-serialised on every stored context,
+ * so unbounded growth is quadratic in message count, and the body field held the entire
+ * converted message forever. Sixty inbound mails with 200 KB bodies produced a 12 MB file
+ * rewritten on every subsequent mail; the server accepts messages up to 25 MB. The inbox
+ * has always capped itself at 200 entries - this brings threads.json in line.
+ *
+ * Bodies are kept only as reply context, so a truncated one still serves its purpose.
+ */
+const MAX_THREADS = 500;
+const MAX_BODY_CHARS = 8000;
+
+/**
+ * Drop the oldest threads once over the cap, preferring to keep outbound records: those
+ * are the agent's own trusted memory of what it sent, and they decide where a reply is
+ * addressed. Inbound records only supply context and can be re-fetched from the inbox.
+ */
+function evict(store: ThreadStore): void {
+	const ids = Object.keys(store.threads);
+	if (ids.length <= MAX_THREADS) return;
+
+	const ranked = ids
+		.map((id) => {
+			const t = store.threads[id];
+			return { id, outbound: t.outbound === true, at: Date.parse(t.timestamp ?? "") || 0 };
+		})
+		.sort((a, b) => {
+			if (a.outbound !== b.outbound) return a.outbound ? 1 : -1;
+			return a.at - b.at;
+		});
+
+	for (const { id } of ranked.slice(0, ids.length - MAX_THREADS)) {
+		delete store.threads[id];
+	}
+
+	for (const [messageId, threadId] of Object.entries(store.messageIndex)) {
+		if (!store.threads[threadId]) delete store.messageIndex[messageId];
+	}
+}
+
 // In-memory cache - loaded once, written on mutation
 let cache: ThreadStore | null = null;
 
@@ -48,7 +90,11 @@ export function storeThreadContext(threadId: string, context: Omit<ThreadContext
 		return;
 	}
 
-	store.threads[threadId] = { threadId, ...context };
+	store.threads[threadId] = {
+		threadId,
+		...context,
+		body: context.body.length > MAX_BODY_CHARS ? `${context.body.slice(0, MAX_BODY_CHARS)}\n[truncated]` : context.body,
+	};
 	if (context.messageId) {
 		// Likewise for the index: an inbound Message-ID must not remap an id that already
 		// points at an outbound thread.
@@ -58,6 +104,7 @@ export function storeThreadContext(threadId: string, context: Omit<ThreadContext
 			store.messageIndex[context.messageId] = threadId;
 		}
 	}
+	evict(store);
 	persist();
 }
 

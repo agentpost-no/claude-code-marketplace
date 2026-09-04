@@ -18,14 +18,14 @@
     "build": "bun run build:bun && bun run build:node",
     "build:bun": "bun build server.ts --target=bun --outdir=dist --external libsodium-wrappers-sumo",
     "build:node": "bun build server.ts --target=node --outfile=dist/server.node.mjs --external libsodium-wrappers-sumo --banner '#!/usr/bin/env node'",
-    "start": "bun install --no-summary && bun dist/server.js",
+    "start": "bun install --frozen-lockfile --no-summary && bun dist/server.js",
     "start:node": "node dist/server.node.mjs",
     "typecheck": "tsc --noEmit",
     "prepare": "bun run build",
     "test": "bun test"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "libsodium-wrappers-sumo": "^0.7.15",
     "postal-mime": "^2.4.1",
     "turndown": "^7.2.4"

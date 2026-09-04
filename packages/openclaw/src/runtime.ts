@@ -1,6 +1,7 @@
 import { initSodium, loadOrGenerateHmacKey, loadOrGenerateKeys, toBase64 } from "../../../plugins/agentpost/crypto.js";
 import { type InboxEntry, takeUnread } from "../../../plugins/agentpost/inbox.js";
 import { type IncomingMailItem, processIncomingEmail } from "../../../plugins/agentpost/mail.js";
+import { carriesThirdPartyText, formatDeliveryNotification } from "../../../plugins/agentpost/notice.js";
 import { setStorageHome } from "../../../plugins/agentpost/paths.js";
 import type { DeliveryNotification, SendEmailResult } from "../../../plugins/agentpost/protocol.js";
 import {
@@ -166,22 +167,15 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 				});
 			},
 			onDeliveryNotification(notification: DeliveryNotification) {
-				const labels: Record<string, string> = {
-					delivered: "Delivered",
-					bounced: "Bounced",
-					spam_complaint: "Spam complaint",
-					opened: "Opened",
-				};
-				const label = labels[notification.event] ?? notification.event;
-				emitNotice(
-					`notice:${notification.event}:${notification.messageId}`,
-					`[${label}] ${notification.description} (to ${notification.recipient})`,
-					{
-						source: "email",
-						event: notification.event,
-						recipient: notification.recipient,
-					},
-				);
+				// A bounce reason is written by the receiving mail server, which on a bounce is
+				// whoever the agent just mailed. notice.ts fences it; the meta flag tells the
+				// gateway not to hand this notice owner standing. See notice.ts.
+				emitNotice(`notice:${notification.event}:${notification.messageId}`, formatDeliveryNotification(notification), {
+					source: "email",
+					event: notification.event,
+					recipient: notification.recipient,
+					third_party_text: String(carriesThirdPartyText(notification)),
+				});
 			},
 			onSendResult(result: SendEmailResult) {
 				const text = result.success

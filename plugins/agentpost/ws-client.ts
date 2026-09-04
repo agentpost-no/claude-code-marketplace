@@ -1,4 +1,4 @@
-import { fromBase64, sealedBoxDecrypt, toBase64 } from "./crypto.js";
+import { fromBase64, sealedBoxDecrypt, sha256, toBase64 } from "./crypto.js";
 import type { ClientToWorker, WorkerToClient } from "./protocol.js";
 import { PROTOCOL_VERSION, TERMINAL_WS_CLOSE_CODES, WS_CLOSE } from "./protocol.js";
 import type { KeyPair, WsClient, WsClientEvents } from "./types.js";
@@ -9,6 +9,22 @@ const PING_INTERVAL_MS = 30_000;
 const PONG_TIMEOUT_MS = 10_000;
 /** Force-reconnect if a connection does not authenticate within this window. */
 const CONNECT_TIMEOUT_MS = 20_000;
+
+/**
+ * Every auth challenge the worker mints carries this tag in its plaintext. See
+ * `worker/src/auth.ts` for why: without it, any sealed box the server sends - including
+ * a stored inbound email replayed out of R2 - would be decrypted and echoed back.
+ */
+const CHALLENGE_DOMAIN = "agentpost-auth-v1|";
+
+function hasChallengeDomain(plaintext: Uint8Array): boolean {
+	const tag = new TextEncoder().encode(CHALLENGE_DOMAIN);
+	if (plaintext.length <= tag.length) return false;
+	for (let i = 0; i < tag.length; i++) {
+		if (plaintext[i] !== tag[i]) return false;
+	}
+	return true;
+}
 
 export function createWsClient(url: string, agentId: string, keys: KeyPair, events: WsClientEvents): WsClient {
 	let ws: WebSocket | null = null;
@@ -22,6 +38,10 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 	let awaitingPong = false;
 	let needsUpgrade = false;
 	let failedConnects = 0;
+	// Gate for every non-handshake frame, and a one-shot guard so a single connection
+	// answers at most one challenge. Both reset on each connect().
+	let authenticated = false;
+	let answeredChallenge = false;
 	// Every connect() bumps this. Socket event handlers capture their generation
 	// and bail if a newer connect() has superseded them, so a late close/error
 	// from an abandoned socket can never disturb the current connection.
@@ -30,6 +50,8 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 	function connect() {
 		if (closed) return;
 		cleanup();
+		authenticated = false;
+		answeredChallenge = false;
 
 		const myGen = ++generation;
 		const wsUrl = `${url.replace(/^http/, "ws")}/agents/mail-agent/${agentId}?v=${PROTOCOL_VERSION}`;
@@ -75,6 +97,8 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 		socket.addEventListener("close", (event) => {
 			if (myGen !== generation || closed) return;
 			accessToken = null;
+			authenticated = false;
+			answeredChallenge = false;
 			stopPing();
 			clearConnectWatchdog();
 			events.onDisconnect();
@@ -141,18 +165,56 @@ export function createWsClient(url: string, agentId: string, keys: KeyPair, even
 	}
 
 	function handleMessage(msg: WorkerToClient) {
+		// Everything except the handshake itself is refused until the server has proved it
+		// holds a challenge our key answered. The handshake is one-way - we authenticate to
+		// the server, never the reverse - so without this gate anyone able to serve the
+		// worker URL could push fabricated mail and unfenced notice text straight into the
+		// agent's context with no cryptography to break.
+		if (!authenticated && msg.type !== "auth_challenge" && msg.type !== "auth_result" && msg.type !== "pong") {
+			console.error(`[agentpost] Ignoring ${msg.type} received before authentication`);
+			return;
+		}
+
 		switch (msg.type) {
 			case "auth_challenge": {
+				// Only ever answer one challenge, and only while unauthenticated.
+				if (authenticated || answeredChallenge) {
+					console.error("[agentpost] Ignoring unexpected auth_challenge");
+					break;
+				}
+
 				const ciphertext = fromBase64(msg.encryptedChallenge);
 				const decrypted = sealedBoxDecrypt(ciphertext, keys.publicKey, keys.privateKey);
+
+				// Refuse anything that is not a challenge the worker minted for this
+				// handshake, and never echo the plaintext back.
+				//
+				// Inbound mail is sealed to this same key and stored as ciphertext on the
+				// server. Without these two rules the client is a decryption oracle: a
+				// malicious or compromised worker replays each stored email as an
+				// `encryptedChallenge` and reads the plaintext straight out of the auth
+				// response - which is precisely the property sealing the mail is meant to
+				// provide. The digest is one-way, so even a blob that somehow carried the
+				// tag would yield nothing usable.
+				if (!hasChallengeDomain(decrypted)) {
+					console.error(
+						"[agentpost] Refusing an auth challenge that is not domain-tagged. Not answering - the worker may be outdated or the connection is not the real worker.",
+					);
+					answeredChallenge = true;
+					ws?.close(WS_CLOSE.AUTH_FAILED, "Untagged challenge");
+					break;
+				}
+
+				answeredChallenge = true;
 				send({
 					type: "auth_response",
-					challenge: toBase64(decrypted),
+					challenge: toBase64(sha256(decrypted)),
 				});
 				break;
 			}
 			case "auth_result":
 				if (msg.success) {
+					authenticated = true;
 					accessToken = msg.accessToken ?? null;
 					backoff = INITIAL_BACKOFF_MS;
 					failedConnects = 0;

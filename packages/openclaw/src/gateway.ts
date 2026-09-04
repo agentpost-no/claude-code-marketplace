@@ -155,8 +155,11 @@ export async function startAccount(ctx: GatewayContext): Promise<void> {
 				rawBody: text,
 				// Derived from the event, so a re-sent notice is not a second turn.
 				messageId: meta.id ?? `notice:${meta.event ?? "status"}`,
-				// The worker authenticated this, not an arbitrary sender.
-				inboundAccessAuthorized: true,
+				// The worker authenticated the webhook that produced this notice - it did not
+				// author the text inside it. A bounce carries the receiving mail server's own
+				// rejection message, so `third_party_text` marks the ones that must not be
+				// waved past the channel's DM policy attributed to the owner's address.
+				inboundAccessAuthorized: meta.third_party_text !== "true",
 				// Deliberately inert. See above: this is the return path that looped.
 				deliver: async () => {
 					log.info("reply to a status notice is not sent; notices are one-way");

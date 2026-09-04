@@ -1,5 +1,5 @@
 import { fromBase64, sealedBoxDecrypt } from "./crypto.js";
-import { formatEmailContent, parseEmail, saveAttachments } from "./email-parser.js";
+import { escapeUntrusted, formatEmailContent, parseEmail, saveAttachments } from "./email-parser.js";
 import { appendInboxEntry } from "./inbox.js";
 import type { EncryptedEmail } from "./protocol.js";
 import { lookupThread, storeThreadContext } from "./thread.js";
@@ -76,9 +76,14 @@ export async function processIncomingEmail(encrypted: EncryptedEmail, deps: Inco
 		// name an existing thread and take it over. The Message-ID is still recorded
 		// below as the In-Reply-To value, which is what it is actually for.
 		const replyThreadId = `in:${encrypted.id}`;
+		// Normalise before it enters the store, not just before it is rendered. Replying
+		// carries this subject forward into an outbound record (send.ts replyToThread), and
+		// an outbound record renders inside the trusted block - so a subject holding raw
+		// newlines becomes multi-line text attributed to the agent itself. A mail subject
+		// cannot legally contain them anyway; postal-mime decodes RFC 2047 words that can.
 		storeThreadContext(replyThreadId, {
-			to: email.from, // reply goes back to sender
-			subject: email.subject,
+			to: escapeUntrusted(email.from).slice(0, 320),
+			subject: escapeUntrusted(email.subject).slice(0, 320),
 			body: email.textBody,
 			links: email.links.length > 0 ? email.links : undefined,
 			timestamp: encrypted.receivedAt,

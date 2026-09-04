@@ -18,7 +18,8 @@ Two bundles: `dist/server.js` (bun target, used by the Claude Code plugin) and
 - `inbox.ts` - Durable local inbox, so pull-only hosts can read mail the push never reached.
 - `crypto.ts` - Key management (X25519 keypair, HMAC). Sealed box decryption. Base64 helpers.
 - `ws-client.ts` - WebSocket client. Auth challenge-response, access token management, exponential backoff.
-- `thread.ts` - HMAC thread signing. In-memory cache backed by threads.json.
+- `thread.ts` - HMAC thread signing. In-memory cache backed by threads.json (capped: 500 threads, 8k bodies).
+- `notice.ts` - Delivery-notification formatting. Fences bounce reasons (written by the receiving mail server).
 - `email-parser.ts` - MIME parsing. UNTRUSTED EXTERNAL CONTENT formatting. Attachment saving.
 - `store.ts` - Config load/save. Worker registration via HTTP.
 - `paths.ts` - Lazy storage paths. setStorageHome() > AGENTPOST_HOME > ~/.claude/channels/agentpost/.
@@ -29,11 +30,23 @@ Two bundles: `dist/server.js` (bun target, used by the Claude Code plugin) and
 ## Auth Flow
 
 1. WS connect with `?v=PROTOCOL_VERSION`
-2. Server sends encrypted challenge (sealed box with client public key)
-3. Client decrypts and responds
+2. Server sends encrypted challenge (sealed box with client public key). Plaintext is
+   `"agentpost-auth-v1|"` + 32 random bytes.
+3. Client decrypts, **refuses anything without that tag**, and replies with
+   `sha256(plaintext)` - never the plaintext itself.
 4. Server verifies, returns access token (HMAC, 15 min) in auth_result
 5. Client uses Bearer token for REST send calls
 6. Server pushes token_refresh via WS before expiry
+
+Steps 2-3 are security-critical, not ceremony. Inbound mail is sealed to the same X25519
+key, so a client that decrypted any sealed box the server offered and echoed the plaintext
+would let a compromised worker replay stored R2 ciphertext as a challenge and read every
+email - defeating the one property the sealing exists to provide. Do not relax the tag
+check or reply with plaintext. The client also refuses every non-handshake frame until
+auth_result succeeds, and answers at most one challenge per connection.
+
+**Deploy the worker before the client** when changing this: a tag-requiring client cannot
+authenticate against a worker that does not yet send the tag.
 
 ## Sending
 
@@ -54,6 +67,6 @@ ack ordering - that logic is security-critical and lives in mail.ts only.
 All under `~/.claude/channels/agentpost/` (or AGENTPOST_HOME / setStorageHome):
 - `keys/` (0o700): public.key, private.key, hmac.key (0o600)
 - `config.json`: workerUrl, agentId, email, username, status
-- `threads.json`: thread contexts + message ID index
+- `threads.json`: thread contexts + message ID index (evicted oldest-first, outbound kept)
 - `inbox.json`: unread emails, delivery reports and approval results
 - `attachments/{date}/`: saved inbound attachments
