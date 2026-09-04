@@ -106,6 +106,17 @@ export async function parseEmail(rawMime: Uint8Array): Promise<ParsedEmail> {
  * promoted into an outbound record and rendered inside the trusted block. See
  * `storeThreadContext` callers in mail.ts.
  */
+/**
+ * Strip control characters while keeping newlines and tabs.
+ *
+ * For text that is legitimately multi-line. ESC (\x1b) is in the stripped range, which is
+ * the point: attacker text is rendered into a terminal.
+ */
+export function stripControlChars(s: string): string {
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping them is the point
+	return s.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "");
+}
+
 export function escapeUntrusted(s: string): string {
 	// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional - strip control chars from untrusted email content
 	return s.replace(/[\r\n\t]/g, " ").replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "");
@@ -174,7 +185,13 @@ export function formatEmailContent(email: ParsedEmail, threadContext?: ThreadCon
 		parts.push("");
 	}
 
-	parts.push("Body:", email.textBody, "", `--- END UNTRUSTED EXTERNAL CONTENT [${nonce}] ---`);
+	// Newlines are kept - a body is meant to be multi-line, and the fence does not rely on
+	// line structure - but control characters are not. Every other untrusted field goes
+	// through escapeUntrusted; the body, the largest attacker-controlled field of all, did
+	// not, so raw ANSI escapes reached the user's terminal through the channel
+	// notification and check_inbox. The prompt fence holds regardless; the terminal is a
+	// separate output channel it was never protecting.
+	parts.push("Body:", stripControlChars(email.textBody), "", `--- END UNTRUSTED EXTERNAL CONTENT [${nonce}] ---`);
 
 	return parts.join("\n");
 }

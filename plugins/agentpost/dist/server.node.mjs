@@ -30263,6 +30263,7 @@ function sha256(data) {
 // file-store.ts
 import { chmodSync as chmodSync2, existsSync as existsSync2, mkdirSync as mkdirSync2, readFileSync as readFileSync2, renameSync, writeFileSync as writeFileSync2 } from "node:fs";
 import { dirname } from "node:path";
+var tmpCounter = 0;
 function loadJsonFile(path, defaultValue) {
   if (!existsSync2(path))
     return defaultValue;
@@ -30277,7 +30278,8 @@ function loadJsonFile(path, defaultValue) {
 }
 function saveJsonFile(path, data) {
   mkdirSync2(dirname(path), { recursive: true, mode: 448 });
-  const tmp = `${path}.tmp`;
+  tmpCounter = (tmpCounter + 1) % 1e6;
+  const tmp = `${path}.${process.pid}.${tmpCounter}.tmp`;
   writeFileSync2(tmp, JSON.stringify(data, null, 2), { mode: 384 });
   chmodSync2(tmp, 384);
   renameSync(tmp, path);
@@ -34234,6 +34236,9 @@ async function parseEmail(rawMime) {
     attachments
   };
 }
+function stripControlChars(s) {
+  return s.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "");
+}
 function escapeUntrusted(s) {
   return s.replace(/[\r\n\t]/g, " ").replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "");
 }
@@ -34258,7 +34263,7 @@ function formatEmailContent(email2, threadContext) {
     }
     parts.push("");
   }
-  parts.push("Body:", email2.textBody, "", `--- END UNTRUSTED EXTERNAL CONTENT [${nonce}] ---`);
+  parts.push("Body:", stripControlChars(email2.textBody), "", `--- END UNTRUSTED EXTERNAL CONTENT [${nonce}] ---`);
   return parts.join(`
 `);
 }
@@ -34510,6 +34515,8 @@ var MIME_BY_EXTENSION = {
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 };
 var MAX_ATTACHED_FILES = 10;
+var PROTECTED_DIRS = [".ssh", ".aws", ".gnupg", ".kube", ".docker", ".config/gcloud"];
+var PROTECTED_FILES = /^(\.env(\..*)?|id_(rsa|dsa|ecdsa|ed25519)|.*\.(pem|p12|pfx|keystore))$/i;
 async function attachmentsFromPaths(paths) {
   if (paths.length > MAX_ATTACHED_FILES) {
     throw new Error(`Too many attachments: ${paths.length}, limit is ${MAX_ATTACHED_FILES}`);
@@ -34524,7 +34531,12 @@ async function attachmentsFromPaths(paths) {
     try {
       resolved = await realpath(resolved);
     } catch {}
-    if (resolved === protectedRoot || resolved.startsWith(protectedRoot + sep)) {
+    const segments = resolved.split(sep);
+    const inProtectedDir = PROTECTED_DIRS.some((dir) => {
+      const parts = dir.split("/");
+      return segments.some((_, i) => parts.every((part, j) => segments[i + j] === part));
+    });
+    if (resolved === protectedRoot || resolved.startsWith(protectedRoot + sep) || inProtectedDir || PROTECTED_FILES.test(basename(resolved))) {
       throw new Error(`Cannot attach ${basename(filePath)}`);
     }
     let buf;

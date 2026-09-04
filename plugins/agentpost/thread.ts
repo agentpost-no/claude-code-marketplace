@@ -71,6 +71,13 @@ function persist(): void {
 	if (cache) saveJsonFile(threadsPath(), cache);
 }
 
+/**
+ * Derive a thread id.
+ *
+ * An HMAC over the send parameters, which makes the id unguessable and stable, but it is
+ * never verified anywhere - it is a lookup key, not a credential. Forgery is prevented
+ * structurally instead; see storeThreadContext below.
+ */
 export function signThread(hmacKey: Uint8Array, input: ThreadSignInput): string {
 	const message = `${input.from}\0${input.to}\0${input.subject}\0${input.timestamp}\0${input.nonce}`;
 	const tag = hmac(hmacKey, new TextEncoder().encode(message));

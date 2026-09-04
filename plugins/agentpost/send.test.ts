@@ -60,6 +60,37 @@ describe("attachmentsFromPaths", () => {
 		expect(Buffer.from(attachment.content, "base64").toString()).toBe("a normal attachment");
 	});
 
+	it("refuses the usual credential stores wherever they sit", async () => {
+		// The "attach your credentials" instruction can arrive inside an email, and mail to
+		// the owner or a trusted contact skips approval - so the agent asking is not
+		// evidence a human decided.
+		const ssh = join(outside, ".ssh");
+		mkdirSync(ssh, { recursive: true });
+		writeFileSync(join(ssh, "id_rsa"), "PRIVATE KEY");
+		await expect(attachmentsFromPaths([join(ssh, "id_rsa")])).rejects.toThrow(/Cannot attach/);
+
+		const aws = join(outside, ".aws");
+		mkdirSync(aws, { recursive: true });
+		writeFileSync(join(aws, "credentials"), "[default]");
+		await expect(attachmentsFromPaths([join(aws, "credentials")])).rejects.toThrow(/Cannot attach/);
+	});
+
+	it("refuses credential filenames outside any protected directory", async () => {
+		for (const name of [".env", ".env.production", "server.pem", "id_ed25519"]) {
+			writeFileSync(join(outside, name), "secret");
+			await expect(attachmentsFromPaths([join(outside, name)])).rejects.toThrow(/Cannot attach/);
+		}
+	});
+
+	it("does not over-block ordinary files with similar names", async () => {
+		// A denylist that swallowed these would break real attachments.
+		for (const name of ["environment.md", "notes.pem.txt", "id_rsa_notes.txt"]) {
+			writeFileSync(join(outside, name), "fine");
+			const [a] = await attachmentsFromPaths([join(outside, name)]);
+			expect(a.name).toBe(name);
+		}
+	});
+
 	it("caps how many files one message can carry", async () => {
 		const many = Array.from({ length: 11 }, () => join(outside, "report.pdf"));
 		await expect(attachmentsFromPaths(many)).rejects.toThrow(/Too many attachments/);
