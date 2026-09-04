@@ -43,7 +43,6 @@ var __export = (target, all) => {
       set: __exportSetter.bind(all, name)
     });
 };
-var __require = import.meta.require;
 
 // node_modules/ajv/dist/compile/codegen/code.js
 var require_code = __commonJS((exports) => {
@@ -34395,6 +34394,46 @@ async function processIncomingEmail(encrypted, deps) {
 }
 
 // send.ts
+import { basename } from "path";
+import { readFile } from "fs/promises";
+var MIME_BY_EXTENSION = {
+  pdf: "application/pdf",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  csv: "text/csv",
+  txt: "text/plain",
+  md: "text/markdown",
+  json: "application/json",
+  html: "text/html",
+  xml: "application/xml",
+  zip: "application/zip",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+};
+async function attachmentsFromPaths(paths) {
+  const out = [];
+  for (const filePath of paths) {
+    let buf;
+    try {
+      buf = await readFile(filePath);
+    } catch (err) {
+      throw new Error(`Failed to read file ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+    out.push({
+      name: basename(filePath),
+      content: buf.toString("base64"),
+      contentType: MIME_BY_EXTENSION[ext] ?? "application/octet-stream"
+    });
+  }
+  return out;
+}
 async function sendViaRest(params, ctx) {
   if (!ctx.accessToken) {
     return { success: false, error: "No access token. Wait for WebSocket authentication." };
@@ -34920,39 +34959,12 @@ ${entry.content}`;
     }
     case "send_email": {
       const { to, subject, body, html_body, on_behalf_of, footer_language, attachments, file_paths } = args;
-      const allAttachments = [...attachments ?? []];
+      let allAttachments = [...attachments ?? []];
       if (file_paths?.length) {
-        const { readFile } = await import("fs/promises");
-        const { basename } = await import("path");
-        const mimeMap = {
-          pdf: "application/pdf",
-          png: "image/png",
-          jpg: "image/jpeg",
-          jpeg: "image/jpeg",
-          gif: "image/gif",
-          csv: "text/csv",
-          txt: "text/plain",
-          json: "application/json",
-          html: "text/html",
-          xml: "application/xml",
-          zip: "application/zip",
-          doc: "application/msword",
-          docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          xls: "application/vnd.ms-excel",
-          xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        };
-        for (const filePath of file_paths) {
-          try {
-            const buf = await readFile(filePath);
-            const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
-            allAttachments.push({
-              name: basename(filePath),
-              content: buf.toString("base64"),
-              contentType: mimeMap[ext] ?? "application/octet-stream"
-            });
-          } catch (err) {
-            return toolError(`Failed to read file ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
-          }
+        try {
+          allAttachments = [...allAttachments, ...await attachmentsFromPaths(file_paths)];
+        } catch (err) {
+          return toolError(err instanceof Error ? err.message : String(err));
         }
       }
       const result = await sendNewEmail({

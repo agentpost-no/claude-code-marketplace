@@ -3,7 +3,14 @@ import { type InboxEntry, takeUnread } from "../../../plugins/agentpost/inbox.js
 import { type IncomingMailItem, processIncomingEmail } from "../../../plugins/agentpost/mail.js";
 import { setStorageHome } from "../../../plugins/agentpost/paths.js";
 import type { DeliveryNotification, SendEmailResult } from "../../../plugins/agentpost/protocol.js";
-import { replyToThread, type SendContext, type SendResult, sendNewEmail } from "../../../plugins/agentpost/send.js";
+import {
+	attachmentsFromPaths,
+	replyToThread,
+	type SendAttachment,
+	type SendContext,
+	type SendResult,
+	sendNewEmail,
+} from "../../../plugins/agentpost/send.js";
 import { fetchStatus, loadConfig, register, saveConfig } from "../../../plugins/agentpost/store.js";
 import { getAllMessageIds, lookupThread } from "../../../plugins/agentpost/thread.js";
 import type { Config, KeyPair, WsClient } from "../../../plugins/agentpost/types.js";
@@ -39,8 +46,13 @@ export interface MailRuntime {
 	start: () => Promise<void>;
 	stop: () => void;
 	/** Reply in an existing thread when `threadId` is known, otherwise start a new one. */
-	send: (params: { to: string; text: string; threadId?: string | null }) => Promise<SendResult & { threadId?: string }>;
-	/** Compose a real email: subject line, optional HTML alternative, on-behalf-of. */
+	send: (params: {
+		to: string;
+		text: string;
+		threadId?: string | null;
+		attachments?: SendAttachment[];
+	}) => Promise<SendResult & { threadId?: string }>;
+	/** Compose a real email: subject line, optional HTML alternative, attachments. */
 	sendEmail: (params: {
 		to: string;
 		subject: string;
@@ -48,6 +60,10 @@ export interface MailRuntime {
 		html_body?: string;
 		on_behalf_of?: string;
 		footer_language?: "no" | "en";
+		/** Local paths, read and base64-encoded before sending. */
+		file_paths?: string[];
+		/** Already-encoded blobs, for content the agent generated rather than read. */
+		attachments?: SendAttachment[];
 	}) => Promise<SendResult & { threadId?: string }>;
 	/** Unread inbound mail and notices, marked read as they are returned. */
 	readInbox: (limit: number) => { taken: InboxEntry[]; remaining: number };
@@ -264,7 +280,7 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 			authenticated = false;
 		},
 
-		async send({ to, text, threadId }) {
+		async send({ to, text, threadId, attachments }) {
 			if (!config || !hmacKey) return { success: false, error: "agentpost is not registered yet" };
 
 			const guard = guardSend(to);
@@ -272,22 +288,35 @@ export function createMailRuntime(account: AgentpostAccount, cb: MailRuntimeCall
 
 			// A known thread id means this is an answer to mail we hold, so keep the
 			// subject and In-Reply-To chain rather than starting a fresh conversation.
-			if (threadId && lookupThread(threadId)) {
+			if (threadId && lookupThread(threadId) && !attachments?.length) {
 				const replied = await replyToThread(threadId, text, sendContext());
 				return { ...replied, threadId };
 			}
 
 			return sendNewEmail(
-				{ to, subject: deriveSubject(text), body: text },
+				{ to, subject: deriveSubject(text), body: text, attachments },
 				{ ...sendContext(), fromAddress: config.email, hmacKey },
 			);
 		},
 
-		async sendEmail(params) {
+		async sendEmail({ file_paths, attachments, ...params }) {
 			if (!config || !hmacKey) return { success: false, error: "agentpost is not registered yet" };
 			const guard = guardSend(params.to);
 			if (guard) return guard;
-			return sendNewEmail(params, { ...sendContext(), fromAddress: config.email, hmacKey });
+
+			let all = [...(attachments ?? [])];
+			if (file_paths?.length) {
+				try {
+					all = [...all, ...(await attachmentsFromPaths(file_paths))];
+				} catch (err) {
+					return { success: false, error: err instanceof Error ? err.message : String(err) };
+				}
+			}
+
+			return sendNewEmail(
+				{ ...params, attachments: all.length > 0 ? all : undefined },
+				{ ...sendContext(), fromAddress: config.email, hmacKey },
+			);
 		},
 
 		readInbox(limit) {

@@ -6,7 +6,7 @@ import { appendInboxEntry, takeUnread, unreadCount } from "./inbox.js";
 import { type IncomingMailItem, processIncomingEmail } from "./mail.js";
 import { configPath } from "./paths.js";
 import type { DeliveryNotification, EncryptedEmail } from "./protocol.js";
-import { replyToThread, type SendContext, sendNewEmail } from "./send.js";
+import { attachmentsFromPaths, replyToThread, type SendContext, sendNewEmail } from "./send.js";
 import { getWorkerUrl, loadConfig, register, saveConfig } from "./store.js";
 import { getAllMessageIds } from "./thread.js";
 import type { Config, KeyPair } from "./types.js";
@@ -250,43 +250,15 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 				file_paths?: string[];
 			};
 
-			// Build attachment list as base64
-			const allAttachments: Array<{ name: string; content: string; contentType: string }> = [...(attachments ?? [])];
-
+			let allAttachments = [...(attachments ?? [])];
 			if (file_paths?.length) {
-				const { readFile } = await import("node:fs/promises");
-				const { basename } = await import("node:path");
-				const mimeMap: Record<string, string> = {
-					pdf: "application/pdf",
-					png: "image/png",
-					jpg: "image/jpeg",
-					jpeg: "image/jpeg",
-					gif: "image/gif",
-					csv: "text/csv",
-					txt: "text/plain",
-					json: "application/json",
-					html: "text/html",
-					xml: "application/xml",
-					zip: "application/zip",
-					doc: "application/msword",
-					docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-					xls: "application/vnd.ms-excel",
-					xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-				};
-				for (const filePath of file_paths) {
-					try {
-						const buf = await readFile(filePath);
-						const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
-						allAttachments.push({
-							name: basename(filePath),
-							content: buf.toString("base64"),
-							contentType: mimeMap[ext] ?? "application/octet-stream",
-						});
-					} catch (err) {
-						return toolError(`Failed to read file ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
-					}
+				try {
+					allAttachments = [...allAttachments, ...(await attachmentsFromPaths(file_paths))];
+				} catch (err) {
+					return toolError(err instanceof Error ? err.message : String(err));
 				}
 			}
+
 			const result = await sendNewEmail(
 				{
 					to,

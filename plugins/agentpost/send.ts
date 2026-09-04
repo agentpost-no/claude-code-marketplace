@@ -1,3 +1,5 @@
+import { basename } from "node:path";
+import { readFile } from "node:fs/promises";
 import { lookupThread, signThread, storeThreadContext } from "./thread.js";
 
 /** Outbound send over the worker REST API. Shared by every host adapter. */
@@ -16,6 +18,57 @@ export interface SendParams {
 	custom_headers?: Record<string, string>;
 	footer_language?: "no" | "en";
 	attachments?: SendAttachment[];
+}
+
+/**
+ * Extension to MIME type. Deliberately a short list of what an agent actually attaches:
+ * a wrong type on an unusual extension is worse than the octet-stream fallback, which
+ * every mail client handles.
+ */
+const MIME_BY_EXTENSION: Record<string, string> = {
+	pdf: "application/pdf",
+	png: "image/png",
+	jpg: "image/jpeg",
+	jpeg: "image/jpeg",
+	gif: "image/gif",
+	webp: "image/webp",
+	svg: "image/svg+xml",
+	csv: "text/csv",
+	txt: "text/plain",
+	md: "text/markdown",
+	json: "application/json",
+	html: "text/html",
+	xml: "application/xml",
+	zip: "application/zip",
+	doc: "application/msword",
+	docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	xls: "application/vnd.ms-excel",
+	xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+};
+
+/**
+ * Read local files into base64 attachments.
+ *
+ * Throws on the first unreadable path rather than sending a mail that is quietly
+ * missing what the agent said it attached.
+ */
+export async function attachmentsFromPaths(paths: readonly string[]): Promise<SendAttachment[]> {
+	const out: SendAttachment[] = [];
+	for (const filePath of paths) {
+		let buf: Buffer;
+		try {
+			buf = await readFile(filePath);
+		} catch (err) {
+			throw new Error(`Failed to read file ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
+		}
+		const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+		out.push({
+			name: basename(filePath),
+			content: buf.toString("base64"),
+			contentType: MIME_BY_EXTENSION[ext] ?? "application/octet-stream",
+		});
+	}
+	return out;
 }
 
 export interface SendContext {

@@ -19,7 +19,7 @@ export function registerTools(api: OpenClawPluginApi): void {
 		name: "agentpost_send_email",
 		label: "Send email",
 		description:
-			"Send a real email through agentpost, with a subject line. Use this instead of a plain channel message when the subject matters, when the recipient is outside an existing conversation, or when the message needs an HTML alternative. The owner approves outbound mail unless the recipient is already a trusted contact - a queued message has not been sent yet, so do not tell anyone to check their inbox until approval is confirmed.",
+			"Send a real email through agentpost, with a subject line and attachments. Use this instead of a plain channel message when the subject matters, when the recipient is outside an existing conversation, or when the message needs an HTML alternative. The owner approves outbound mail unless the recipient is already a trusted contact - a queued message has not been sent yet, so do not tell anyone to check their inbox until approval is confirmed.",
 		parameters: Type.Object({
 			to: Type.String({ description: "Recipient email address." }),
 			subject: Type.String({ description: "Subject line. Supports full UTF-8." }),
@@ -35,6 +35,21 @@ export function registerTools(api: OpenClawPluginApi): void {
 					description: "Language for the footer. Defaults to 'en'.",
 				}),
 			),
+			file_paths: Type.Optional(
+				Type.Array(Type.String(), {
+					description: "Local file paths to attach. Read and encoded for you; the type comes from the extension.",
+				}),
+			),
+			attachments: Type.Optional(
+				Type.Array(
+					Type.Object({
+						name: Type.String({ description: "Filename the recipient sees, e.g. 'report.pdf'." }),
+						content: Type.String({ description: "File content, base64." }),
+						contentType: Type.String({ description: "MIME type, e.g. 'application/pdf'." }),
+					}),
+					{ description: "Attachments you generated rather than read from disk." },
+				),
+			),
 			account: Type.Optional(Type.String({ description: "Account id, when more than one is configured." })),
 		}),
 		outputSchema: Type.Object({
@@ -43,15 +58,18 @@ export function registerTools(api: OpenClawPluginApi): void {
 			messageId: Type.Optional(Type.String()),
 		}),
 		async execute(_id, params) {
-			const { to, subject, body, html_body, on_behalf_of, footer_language, account } = params as {
-				to: string;
-				subject: string;
-				body: string;
-				html_body?: string;
-				on_behalf_of?: string;
-				footer_language?: "no" | "en";
-				account?: string;
-			};
+			const { to, subject, body, html_body, on_behalf_of, footer_language, file_paths, attachments, account } =
+				params as {
+					to: string;
+					subject: string;
+					body: string;
+					html_body?: string;
+					on_behalf_of?: string;
+					footer_language?: "no" | "en";
+					file_paths?: string[];
+					attachments?: Array<{ name: string; content: string; contentType: string }>;
+					account?: string;
+				};
 
 			const runtime = getRuntime(account);
 			if (!runtime) {
@@ -62,7 +80,16 @@ export function registerTools(api: OpenClawPluginApi): void {
 				};
 			}
 
-			const result = await runtime.sendEmail({ to, subject, body, html_body, on_behalf_of, footer_language });
+			const result = await runtime.sendEmail({
+				to,
+				subject,
+				body,
+				html_body,
+				on_behalf_of,
+				footer_language,
+				file_paths,
+				attachments,
+			});
 			if (!result.success) {
 				return {
 					content: [{ type: "text", text: `Send failed: ${result.error}` }],
